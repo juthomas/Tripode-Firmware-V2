@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="tripode.ico">
+    <link rel="stylesheet" href="main.css">
+
+</head>
+
+<body>
+    <button id="firstBtn">
+        Wsh
+    </button>
+</body>
+<script>
+    document.addEventListener("DOMContentLoaded", function (event) {
+        let firstBtn = document.getElementById("firstBtn");
+        firstBtn.addEventListener('click', () => {
+            Socket.send("Hello buddy");
+        })
+
+        let Socket = null;
+        if (window.location.hostname != "")
+            Socket = new WebSocket('ws://' + window.location.hostname + '/ws');
+        if (Socket) {
+            Socket.addEventListener('message', function (event) {
+                console.log('Message from server ', event.data);
+            })
+        }
+    })
+</script>
+
+</html>

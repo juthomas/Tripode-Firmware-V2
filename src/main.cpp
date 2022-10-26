@@ -1,138 +1,22 @@
-#include <Arduino.h>
-#include <TFT_eSPI.h>
-#include <Wire.h>
-#include <L3G.h>
-#include <Button2.h>
-#include <WiFi.h>
-#include "jsonParser.h"
-#include <sstream>
+#define SET_GLOBAL_VAR
+#include "tripodes.h"
 
-// #include <EEPROM.h>
-// #define EEPROM_SIZE 512
-#define LEFT_BTN 0
-#define RIGHT_BTN 35
 
-TFT_eSPI tft = TFT_eSPI(); // Invoke custom library
-L3G gyro;
-hw_timer_t *buttons_timer;
-Button2 left_btn(LEFT_BTN);
-Button2 right_btn(RIGHT_BTN);
 
-typedef struct s_json_data
-{
-	IPAddress udp_target_ip;
-	uint32_t udp_target_port;
-
-	uint32_t udp_input_port;
-	IPAddress osc_target_ip;
-
-	uint32_t osc_target_port;
-
-	std::string sta_ssid;
-	std::string sta_pswd;
-	std::string ap_ssid;
-	std::string ap_pswd;
-
-	std::string tripode_id;
-} t_json_data;
-
-enum e_json_data_types
-{
-	TYPE_IP,
-	TYPE_STRING,
-	TYPE_INTEGER,
-};
-
-typedef struct s_json_data_parser
-{
-	size_t offset;
-	std::string name;
-	e_json_data_types type;
-
-} t_json_data_parser;
-
-static const std::string json_data_parser_patch[] = {"upd_target_ip",
-													 "upd_target_port",
-													 "upd_input_port",
-													 "osc_target_ip",
-													 "osc_target_port",
-													 "sta_ssid",
-													 "sta_pswd",
-													 "ap_ssid",
-													 "ap_pswd",
-													 "tripode_id"};
-
-static const t_json_data_parser json_data_parser[] = {
-	(t_json_data_parser){.offset = offsetof(t_json_data, udp_target_ip), .name = "udp_target_ip", .type = TYPE_IP},
-	(t_json_data_parser){.offset = offsetof(t_json_data, udp_target_port), .name = "udp_target_port", .type = TYPE_INTEGER},
-	(t_json_data_parser){.offset = offsetof(t_json_data, udp_input_port), .name = "udp_input_port", .type = TYPE_INTEGER},
-	(t_json_data_parser){.offset = offsetof(t_json_data, osc_target_ip), .name = "osc_target_ip", .type = TYPE_IP},
-	(t_json_data_parser){.offset = offsetof(t_json_data, osc_target_port), .name = "osc_target_port", .type = TYPE_INTEGER},
-	(t_json_data_parser){.offset = offsetof(t_json_data, sta_ssid), .name = "sta_ssid", .type = TYPE_STRING},
-	(t_json_data_parser){.offset = offsetof(t_json_data, sta_pswd), .name = "sta_pswd", .type = TYPE_STRING},
-	(t_json_data_parser){.offset = offsetof(t_json_data, ap_ssid), .name = "ap_ssid", .type = TYPE_STRING},
-	(t_json_data_parser){.offset = offsetof(t_json_data, ap_pswd), .name = "ap_pswd", .type = TYPE_STRING},
-	(t_json_data_parser){.offset = offsetof(t_json_data, tripode_id), .name = "tripode_id", .type = TYPE_STRING}};
-
-t_json_data json_data;
-
-void IRAM_ATTR button_loop()
-{
-	left_btn.loop();
-	right_btn.loop();
-}
-
-void IRAM_ATTR left_btn_handler(Button2 &btn)
-{
-	uint32_t click_type = btn.getClickType();
-
-	tft.fillScreen(TFT_BLACK);
-	tft.setCursor(0, 0);
-	tft.printf("Left btn clicked, clic type : %d", click_type);
-}
-
-void IRAM_ATTR right_btn_handler(Button2 &btn)
-{
-	uint32_t click_type = btn.getClickType();
-
-	tft.fillScreen(TFT_BLACK);
-	tft.setCursor(0, 0);
-	tft.printf("Right btn clicked, clic type : %d", click_type);
-}
-
-void display_home_page()
-{
-	tft.fillScreen(TFT_BLACK);
-	tft.setCursor(0, 0);
-	tft.printf("Please selected your \nmode \n(with bottom buttons)");
-	tft.setCursor(0, 230);
-	tft.setTextColor(TFT_RED);
-	tft.printf("AP mode");
-	tft.setCursor(85, 230);
-	tft.setTextColor(TFT_BLUE);
-	tft.printf("STA mode");
-	tft.setCursor(0, 0);
-	tft.setTextColor(TFT_BLACK);
-}
-
-void error_msg(std::string message)
-{
-	tft.fillScreen(TFT_BLACK);
-	tft.setCursor(0, 0);
-	tft.setTextSize(2);
-	tft.setRotation(3);
-	tft.setTextColor(TFT_RED);
-	tft.printf("[ERROR] ");
-	tft.setTextColor(TFT_WHITE);
-	tft.printf("%s", message.c_str());
-	Serial.printf("[ERROR] %s\n", message.c_str());
-	tft.setTextSize(1);
-	tft.setRotation(0);
-}
 
 void setup_ap()
 {
 	WiFi.mode(WIFI_AP);
+	WiFi.softAP(json_data.ap_ssid.c_str(), json_data.ap_pswd.c_str(), 1, 0, 10);
+	IPAddress myIP = WiFi.softAPIP();
+	Serial.print("AP IP address: ");
+	Serial.println(myIP);
+	Udp.begin(json_data.udp_input_port);
+	server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+			  { request->send(SPIFFS, "/index.html", String(), false); });
+	ws.onEvent(onEvent);
+	server.addHandler(&ws);
+	server.begin();
 }
 
 void init_basic_functions()
@@ -309,15 +193,12 @@ void update_spiffs(char *filePath = "/data.json")
 		{
 		case TYPE_IP:
 		{
-
 			doc[json_data_parser_patch[i]] = ((IPAddress *)((uint32_t)&json_data + json_data_parser[i].offset))->toString().c_str();
 		}
 		break;
 		case TYPE_INTEGER:
 		{
 			doc[json_data_parser_patch[i]] = *(uint32_t *)((uint32_t)&json_data + json_data_parser[i].offset);
-			// uint32_t *tmp_addr = (uint32_t *)((uint32_t)&json_data + json_data_parser[i].offset);
-			// *tmp_addr = (const uint32_t)doc[json_data_parser_patch[i]];
 		}
 		break;
 		case TYPE_STRING:
@@ -341,30 +222,10 @@ void setup()
 	init_basic_functions();
 	display_home_page();
 
-	StaticJsonDocument<200> doc;
-	char json[] =
-		"{\"sensor\":\"gps\",\"time\":1351824120,\"data\":[{\"id\":\"42\",\"value\":\"33\"} ,{\"id\":\"43\",\"value\":\"34\"}]}";
-	// Deserialize the JSON document
-	DeserializationError error = deserializeJson(doc, json);
-	if (error)
-	{
-		Serial.print(F("deserializeJson() failed: "));
-		Serial.println(error.f_str());
-		return;
-	}
-
-	const char *sensor = doc["sensor"];
-	long time = doc["time"];
-	double latitude = doc["data"][0]["id"];
-	double longitude = doc["data"][0]["value"];
-
-	// Print values.
-	Serial.println(doc["data"].size());
-	Serial.println(latitude, 6);
-	Serial.println(longitude, 6);
-
 	load_spiffs();
-	update_spiffs();
+	setup_ap();
+
+	// update_spiffs();
 }
 
 void loop()
