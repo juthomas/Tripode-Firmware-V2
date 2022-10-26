@@ -1,0 +1,12 @@
+{
+    "upd_target_ip": "192.168.4.2",
+    "upd_target_port": "49160",
+    "upd_input_port": "49141",
+    "osc_target_ip": "192.168.4.2",
+    "osc_target_port": "2002",
+    "sta_ssid": "tripodesAP",
+    "sta_pswd": "44448888",
+    "ap_ssid": "tripodesAP",
+    "ap_pswd": "44448888",
+    "tripode_id": "1_1"
+}
