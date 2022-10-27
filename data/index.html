@@ -14,19 +14,25 @@
     </button>
 </body>
 <script>
-    document.addEventListener("DOMContentLoaded", function (event) {
+    window.addEventListener("load", function (event) {
         let firstBtn = document.getElementById("firstBtn");
         firstBtn.addEventListener('click', () => {
             Socket.send("Hello buddy");
         })
 
-        let Socket = null;
+        var Socket = null;
         if (window.location.hostname != "")
             Socket = new WebSocket('ws://' + window.location.hostname + '/ws');
         if (Socket) {
             Socket.addEventListener('message', function (event) {
                 console.log('Message from server ', event.data);
+                var arr_from_json = JSON.parse( event.data);
+                console.log('Parsed json ', arr_from_json);
             })
+            Socket.addEventListener('error', (event) => {
+                console.log("Error WTF : ", event);
+                window.location.reload();
+             })
         }
     })
 </script>

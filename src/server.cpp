@@ -5,6 +5,11 @@ void onMessage(AsyncWebSocketClient *client, uint8_t *data)
     client->text("I got your text message");
 }
 
+void send_json_to_client(AsyncWebSocketClient *client, uint8_t *data)
+{
+    client->text(serialize_json_data().c_str());
+}
+
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
 {
 
@@ -12,7 +17,8 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
     {
         // client connected
         Serial.printf("ws[%s][%u] connect\n", server->url(), client->id());
-        client->printf("Hello Client %u :)", client->id());
+        // client->printf("Hello Client %u :)", client->id());
+        send_json_to_client(client, data);
         client->ping();
     }
     else if (type == WS_EVT_DISCONNECT)
@@ -42,7 +48,7 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
             {
                 data[len] = 0;
                 Serial.printf("%s\n", (char *)data);
-                onMessage(client, data);
+                send_json_to_client(client, data);
             }
             else
             {
@@ -72,7 +78,7 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
             {
                 data[len] = 0;
                 Serial.printf("%s\n", (char *)data);
-                onMessage(client, data);
+                send_json_to_client(client, data);
             }
             else
             {

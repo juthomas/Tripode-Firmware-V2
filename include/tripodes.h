@@ -12,7 +12,6 @@
 
 #include <sstream>
 
-
 /* SPIFFS Parsing*/
 
 typedef struct s_json_data
@@ -48,7 +47,6 @@ typedef struct s_json_data_parser
 
 } t_json_data_parser;
 
-
 static const std::string json_data_parser_patch[] = {"upd_target_ip",
 													 "upd_target_port",
 													 "upd_input_port",
@@ -72,8 +70,6 @@ static const t_json_data_parser json_data_parser[] = {
 	(t_json_data_parser){.offset = offsetof(t_json_data, ap_pswd), .name = "ap_pswd", .type = TYPE_STRING},
 	(t_json_data_parser){.offset = offsetof(t_json_data, tripode_id), .name = "tripode_id", .type = TYPE_STRING}};
 
-
-
 /* WiFi & Server */
 void setup_ap();
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len);
@@ -88,6 +84,24 @@ void IRAM_ATTR right_btn_handler(Button2 &btn);
 /* Pages */
 void display_home_page();
 void error_msg(std::string message);
+
+/* Data */
+void print_json_data();
+uint8_t get_octet(const char *str, uint8_t n);
+void load_spiffs();
+std::string serialize_json_data();
+void update_spiffs();
+
+namespace patch
+{
+	template <typename T>
+	std::string to_string(const T &n)
+	{
+		std::ostringstream stm;
+		stm << n;
+		return stm.str();
+	}
+}
 
 /* Definition of global variables */
 #ifdef SET_GLOBAL_VAR
