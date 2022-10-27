@@ -14,13 +14,45 @@ h1{
 }
 
 form{
+    /* display: flex;
+justify-content: end;
+    margin-left: auto;
+    margin-right: auto;
+	width: 380px;
+	background-color: rgb(73, 73, 73); */
+}
+
+.protocols {
+    display: flex;
+    flex-direction: column;
+}
+
+
+.classic-form {
     display: flex;
 justify-content: end;
     margin-left: auto;
     margin-right: auto;
-	/* padding: 10px; */
 	width: 380px;
 	background-color: rgb(73, 73, 73);
+}
+
+.commands-form {
+    margin-top: 30px;
+justify-content: end;
+    margin-left: auto;
+    margin-right: auto;
+	width: 380px;
+	background-color: rgb(73, 73, 73);
+}
+
+.command {
+    display: flex;
+    justify-content: end;
+        margin-left: auto;
+        margin-right: auto;
+        width: 380px;
+        background-color: rgb(73, 73, 73);
 }
 
 input[type=text], input[type=number]{

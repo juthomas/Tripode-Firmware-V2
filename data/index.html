@@ -12,7 +12,7 @@
 
     <h1>Tripodes settings</h1>
 
-    <form onsubmit="showEvent(event)" class="form-example">
+    <form onsubmit="showEvent(event)" class="classic-form">
         <div class="form-example">
             <label for="upd_target_ip">upd_target_ip :</label>
             <input type="text" name="upd_target_ip" id="upd_target_ip" placeholder="Ip Addr" value="%upd_target_ip%"
@@ -21,7 +21,7 @@
         <input type="submit" value="Update">
     </form>
 
-    <form onsubmit="showEvent(event)" class="form-example">
+    <form onsubmit="showEvent(event)" class="classic-form">
         <div class="form-example">
             <label for="upd_target_port">upd_target_port :</label>
             <input type="text" name="upd_target_port" id="upd_target_port" placeholder="Ip Addr"
@@ -30,7 +30,7 @@
         <input type="submit" value="Update">
     </form>
 
-    <form onsubmit="showEvent(event)" class="form-example">
+    <form onsubmit="showEvent(event)" class="classic-form">
         <div class="form-example">
             <label for="upd_input_port">upd_input_port :</label>
             <input type="text" name="upd_input_port" id="upd_input_port" placeholder="Ip Addr" value="%upd_input_port%"
@@ -39,7 +39,7 @@
         <input type="submit" value="Update">
     </form>
 
-    <form onsubmit="showEvent(event)" class="form-example">
+    <form onsubmit="showEvent(event)" class="classic-form">
         <div class="form-example">
             <label for="osc_target_ip">osc_target_ip :</label>
             <input type="text" name="osc_target_ip" id="osc_target_ip" placeholder="Ip Addr" value="%osc_target_ip%"
@@ -48,7 +48,7 @@
         <input type="submit" value="Update">
     </form>
 
-    <form onsubmit="showEvent(event)" class="form-example">
+    <form onsubmit="showEvent(event)" class="classic-form">
         <div class="form-example">
             <label for="osc_target_port">osc_target_port :</label>
             <input type="text" name="osc_target_port" id="osc_target_port" placeholder="Ip Addr"
@@ -57,7 +57,7 @@
         <input type="submit" value="Update">
     </form>
 
-    <form onsubmit="showEvent(event)" class="form-example">
+    <form onsubmit="showEvent(event)" class="classic-form">
         <div class="form-example">
             <label for="sta_ssid">sta_ssid :</label>
             <input type="text" name="sta_ssid" id="sta_ssid" placeholder="Ip Addr" value="%sta_ssid%" required>
@@ -65,7 +65,7 @@
         <input type="submit" value="Update">
     </form>
 
-    <form onsubmit="showEvent(event)" class="form-example">
+    <form onsubmit="showEvent(event)" class="classic-form">
         <div class="form-example">
             <label for="sta_pswd">sta_pswd :</label>
             <input type="text" name="sta_pswd" id="sta_pswd" placeholder="Ip Addr" value="%sta_pswd%" required>
@@ -73,7 +73,7 @@
         <input type="submit" value="Update">
     </form>
 
-    <form onsubmit="showEvent(event)" class="form-example">
+    <form onsubmit="showEvent(event)" class="classic-form">
         <div class="form-example">
             <label for="ap_ssid">ap_ssid :</label>
             <input type="text" name="ap_ssid" id="ap_ssid" placeholder="Ip Addr" value="%ap_ssid%" required>
@@ -81,7 +81,7 @@
         <input type="submit" value="Update">
     </form>
 
-    <form onsubmit="showEvent(event)" class="form-example">
+    <form onsubmit="showEvent(event)" class="classic-form">
         <div class="form-example">
             <label for="ap_pswd">ap_pswd :</label>
             <input type="text" name="ap_pswd" id="ap_pswd" placeholder="Ip Addr" value="%ap_pswd%" required>
@@ -89,11 +89,39 @@
         <input type="submit" value="Update">
     </form>
 
-    <form onsubmit="showEvent(event)" class="form-example">
+    <form onsubmit="showEvent(event)" class="classic-form">
         <div class="form-example">
             <label for="tripode_id">tripode_id :</label>
             <input type="text" name="tripode_id" id="tripode_id" placeholder="Ip Addr" value="%tripode_id%" required>
         </div>
+        <input type="submit" value="Update">
+    </form>
+
+
+    <form onsubmit="showEvent(event)" class="commands-form">
+
+        <div class="commands" id="commands">
+            <template id="commands-template">
+                <div class="command">
+                    <label for="command-nu">command :</label>
+                    <input type="text" name="command-nu" id="command-nu" placeholder="command-nu" value="%command-nu%"
+                        required>
+
+                    <div class="protocols">
+                        <div class="protocol">
+                            <label for="protocol-osc-nu">OSC</label>
+                            <input type="radio" id="protocol-osc-nu" name="protocol-nu" value="OSC">
+                        </div>
+                        <div class="protocol">
+                            <label for="protocol-udp-nu">UDP</label>
+                            <input type="radio" id="protocol-udp-nu" name="protocol-nu" value="UDP">
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+        <button onclick="addProtocolButton(event)" id="addProtocol">Ajouter</button>
+        <button onclick="removeProtocolButton(event)" id="removeProtocol">Supprimer</button>
         <input type="submit" value="Update">
     </form>
 
@@ -103,6 +131,8 @@
 
     var Socket = null;
     var values = new Object();
+
+    let numberOfProtocols = 0;
 
     function showEvent(e) {
         e.preventDefault();
@@ -135,8 +165,73 @@
 
     })
 
+    function addCommandToHtml({ value, type }, index) {
+        const rowClone = document.getElementById("commands-template").content.cloneNode(true);
+        rowClone.querySelector('.command').setAttribute('key', index);
+        rowClone.querySelector('.command').setAttribute('id', `command-${index}-parent`);
+        rowClone.getElementById("command-nu").value = value;
+        rowClone.getElementById("command-nu").closest('div').querySelector('label').setAttribute("for", `command-${index}`);
+        rowClone.getElementById("command-nu").name = `command-${index}`;
+        rowClone.getElementById("command-nu").id = `command-${index}`;
+
+        rowClone.getElementById("protocol-osc-nu").closest('div').querySelector('label').setAttribute("for", `protocol-osc-${index}`);
+        rowClone.getElementById("protocol-osc-nu").name = `protocol-${index}`;
+        if (type === 'osc') {
+            rowClone.getElementById("protocol-osc-nu").setAttribute("checked", ``);
+        }
+        rowClone.getElementById("protocol-osc-nu").id = `protocol-osc-${index}`;
+
+        rowClone.getElementById("protocol-udp-nu").closest('div').querySelector('label').setAttribute("for", `protocol-udp-${index}`);
+        rowClone.getElementById("protocol-udp-nu").name = `protocol-${index}`;
+        if (type === 'udp') {
+            rowClone.getElementById("protocol-udp-nu").setAttribute("checked", ``);
+        }
+        rowClone.getElementById("protocol-udp-nu").id = `protocol-udp-${index}`;
+
+        document.getElementById("commands").appendChild(rowClone);
+    }
+
+    function addProtocolButton(e) {
+        e.preventDefault();
+        addCommandToHtml({ value: '', type: 'udp' }, numberOfProtocols);
+        numberOfProtocols++;
+    }
+
+    function removeProtocolButton(e) {
+        e.preventDefault();
+        if (numberOfProtocols > 0) {
+
+            console.log("remove clic");
+            const selectedElem = document.getElementById(`commands`);
+
+            const element = document.getElementById(`command-${numberOfProtocols - 1}-parent`);
+            console.log("OMG WTF", selectedElem, element, numberOfProtocols);
+            selectedElem.removeChild(element);
+
+
+            numberOfProtocols--;
+        }
+    }
+
+
 
     window.onload = () => {
+
+
+
+
+        setTimeout(() => {
+
+            const dataArray = [{ value: "write:;#0D300I255P1;12;12", type: 'udp' },
+            { value: "write:;#0D300I255P1;12;13", type: 'osc' },
+            { value: "write:;#0D300I255P1;12;14", type: 'udp' }];
+
+            dataArray.forEach((elem, index) => {
+                addCommandToHtml(elem, index);
+                numberOfProtocols++;
+            })
+
+        }, 500);
         // let firstBtn = document.getElementById("firstBtn");
         // firstBtn.addEventListener('click', () => {
         //     Socket.send(JSON.stringify({
