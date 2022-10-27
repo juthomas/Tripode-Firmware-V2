@@ -7,7 +7,82 @@ void onMessage(AsyncWebSocketClient *client, uint8_t *data)
 
 void send_json_to_client(AsyncWebSocketClient *client, uint8_t *data)
 {
+
+    Serial.printf("Json for client : %s\n", serialize_json_data().c_str());
     client->text(serialize_json_data().c_str());
+    update_spiffs();
+}
+
+void parse_json_from_client(uint8_t *data)
+{
+    StaticJsonDocument<JSON_SIZE> doc;
+
+    DeserializationError error = deserializeJson(doc, data);
+    if (error)
+    {
+        error_msg(error.c_str());
+        return;
+    }
+
+    JsonObject documentRoot = doc.as<JsonObject>();
+
+    if (doc.containsKey("signals"))
+    {
+        signal_data.clear();
+        for (uint16_t i = 0; i < doc["signals"].size(); i++)
+        {
+            signal_data.push_back((t_signal_data){.value = patch::to_string(doc["signals"][i]["value"].as<const char *>()),
+                                                  .type = patch::to_string(doc["signals"][i]["type"].as<const char *>())
+
+            });
+        }
+        for (std::vector<t_signal_data>::size_type i = 0; i != signal_data.size(); i++)
+        {
+            Serial.printf("Value : %s, type:%s\n", signal_data[i].value.c_str(), signal_data[i].type.c_str());
+        }
+    }
+
+    for (JsonPair keyValue : documentRoot)
+    {
+        // Serial.printf("%s:%s", keyValue.key().c_str(), keyValue.value().as<const char *>());
+        for (uint16_t i = 0; i < sizeof(json_data_parser) / sizeof(t_json_data_parser); i++)
+        {
+            Serial.printf("--Key to store : '%s'\n", keyValue.key().c_str());
+            Serial.printf("--Cmp to store : '%s'\n", json_data_parser[i].name.c_str());
+
+            if (strcmp(json_data_parser[i].name.c_str(), keyValue.key().c_str()) == 0)
+            {
+                Serial.printf("--Value to store : %s\n", (std::string)patch::to_string((const char *)keyValue.value()).c_str());
+                switch (json_data_parser[i].type)
+                {
+                case TYPE_IP:
+                {
+
+                    IPAddress *tmp_addr = (IPAddress *)((uint32_t)&json_data + json_data_parser[i].offset);
+                    *tmp_addr = IPAddress(get_octet((const char *)keyValue.value(), 1),
+                                          get_octet((const char *)keyValue.value(), 2),
+                                          get_octet((const char *)keyValue.value(), 3),
+                                          get_octet((const char *)keyValue.value(), 4));
+                }
+                break;
+                case TYPE_INTEGER:
+                {
+                    uint32_t *tmp_addr = (uint32_t *)((uint32_t)&json_data + json_data_parser[i].offset);
+                    *tmp_addr = (const uint32_t)keyValue.value();
+                }
+                break;
+                case TYPE_STRING:
+                default:
+                {
+                    std::string *tmp_addr = (std::string *)((uint32_t)&json_data + json_data_parser[i].offset);
+                    *tmp_addr = (std::string)patch::to_string((const char *)keyValue.value());
+                }
+                break;
+                }
+            }
+        }
+    }
+    print_json_data();
 }
 
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
@@ -48,6 +123,7 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
             {
                 data[len] = 0;
                 Serial.printf("%s\n", (char *)data);
+                parse_json_from_client(data);
                 send_json_to_client(client, data);
             }
             else
@@ -78,6 +154,8 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
             {
                 data[len] = 0;
                 Serial.printf("%s\n", (char *)data);
+                parse_json_from_client(data);
+
                 send_json_to_client(client, data);
             }
             else

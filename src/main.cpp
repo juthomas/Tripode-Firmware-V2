@@ -1,7 +1,6 @@
 #define SET_GLOBAL_VAR
 #include "tripodes.h"
 
-
 void setup_ap()
 {
 	WiFi.mode(WIFI_AP);
@@ -13,6 +12,10 @@ void setup_ap()
 	server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
 			  { request->send(SPIFFS, "/index.html", String(), false); });
 	ws.onEvent(onEvent);
+	
+	server.serveStatic("/tripode.ico", SPIFFS, "/tripode.ico");
+	server.serveStatic("/main.css", SPIFFS, "/main.css");
+
 	server.addHandler(&ws);
 	server.begin();
 }
@@ -67,10 +70,6 @@ void init_basic_functions()
 	left_btn.setTripleClickHandler(left_btn_handler);
 }
 
-
-
-
-
 void setup()
 {
 	init_basic_functions();
@@ -78,6 +77,7 @@ void setup()
 
 	load_spiffs();
 	setup_ap();
+	print_json_data();
 
 	// update_spiffs();
 }

@@ -9,18 +9,26 @@
 #include <WiFi.h>
 #include "jsonParser.h"
 #include <ESPAsyncWebServer.h>
-
+#include <vector>
 #include <sstream>
 
 /* SPIFFS Parsing*/
 
+#define JSON_SIZE 2048
+
+typedef struct s_signal_data
+{
+	std::string value;
+	std::string type; // OR ENUM
+} t_signal_data;
+
 typedef struct s_json_data
 {
-	IPAddress udp_target_ip;
+	std::string udp_target_ip;
 	uint32_t udp_target_port;
 
 	uint32_t udp_input_port;
-	IPAddress osc_target_ip;
+	std::string osc_target_ip;
 
 	uint32_t osc_target_port;
 
@@ -59,10 +67,10 @@ static const std::string json_data_parser_patch[] = {"upd_target_ip",
 													 "tripode_id"};
 
 static const t_json_data_parser json_data_parser[] = {
-	(t_json_data_parser){.offset = offsetof(t_json_data, udp_target_ip), .name = "udp_target_ip", .type = TYPE_IP},
-	(t_json_data_parser){.offset = offsetof(t_json_data, udp_target_port), .name = "udp_target_port", .type = TYPE_INTEGER},
-	(t_json_data_parser){.offset = offsetof(t_json_data, udp_input_port), .name = "udp_input_port", .type = TYPE_INTEGER},
-	(t_json_data_parser){.offset = offsetof(t_json_data, osc_target_ip), .name = "osc_target_ip", .type = TYPE_IP},
+	(t_json_data_parser){.offset = offsetof(t_json_data, udp_target_ip), .name = "upd_target_ip", .type = TYPE_STRING},
+	(t_json_data_parser){.offset = offsetof(t_json_data, udp_target_port), .name = "upd_target_port", .type = TYPE_INTEGER},
+	(t_json_data_parser){.offset = offsetof(t_json_data, udp_input_port), .name = "upd_input_port", .type = TYPE_INTEGER},
+	(t_json_data_parser){.offset = offsetof(t_json_data, osc_target_ip), .name = "osc_target_ip", .type = TYPE_STRING},
 	(t_json_data_parser){.offset = offsetof(t_json_data, osc_target_port), .name = "osc_target_port", .type = TYPE_INTEGER},
 	(t_json_data_parser){.offset = offsetof(t_json_data, sta_ssid), .name = "sta_ssid", .type = TYPE_STRING},
 	(t_json_data_parser){.offset = offsetof(t_json_data, sta_pswd), .name = "sta_pswd", .type = TYPE_STRING},
@@ -105,6 +113,7 @@ namespace patch
 
 /* Definition of global variables */
 #ifdef SET_GLOBAL_VAR
+std::vector<t_signal_data> signal_data;
 t_json_data json_data;
 TFT_eSPI tft = TFT_eSPI(); // Invoke custom library
 L3G gyro;
@@ -118,6 +127,7 @@ AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 /* Simple use of global variables */
 #else
+extern std::vector<t_signal_data> signal_data;
 extern t_json_data json_data;
 extern Button2 left_btn;
 extern Button2 right_btn;

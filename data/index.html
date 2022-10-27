@@ -9,32 +9,171 @@
 </head>
 
 <body>
-    <button id="firstBtn">
-        Wsh
-    </button>
+
+    <h1>Tripodes settings</h1>
+
+    <form onsubmit="showEvent(event)" class="form-example">
+        <div class="form-example">
+            <label for="upd_target_ip">upd_target_ip :</label>
+            <input type="text" name="upd_target_ip" id="upd_target_ip" placeholder="Ip Addr" value="%upd_target_ip%"
+                required>
+        </div>
+        <input type="submit" value="Update">
+    </form>
+
+    <form onsubmit="showEvent(event)" class="form-example">
+        <div class="form-example">
+            <label for="upd_target_port">upd_target_port :</label>
+            <input type="text" name="upd_target_port" id="upd_target_port" placeholder="Ip Addr"
+                value="%upd_target_port%" required>
+        </div>
+        <input type="submit" value="Update">
+    </form>
+
+    <form onsubmit="showEvent(event)" class="form-example">
+        <div class="form-example">
+            <label for="upd_input_port">upd_input_port :</label>
+            <input type="text" name="upd_input_port" id="upd_input_port" placeholder="Ip Addr" value="%upd_input_port%"
+                required>
+        </div>
+        <input type="submit" value="Update">
+    </form>
+
+    <form onsubmit="showEvent(event)" class="form-example">
+        <div class="form-example">
+            <label for="osc_target_ip">osc_target_ip :</label>
+            <input type="text" name="osc_target_ip" id="osc_target_ip" placeholder="Ip Addr" value="%osc_target_ip%"
+                required>
+        </div>
+        <input type="submit" value="Update">
+    </form>
+
+    <form onsubmit="showEvent(event)" class="form-example">
+        <div class="form-example">
+            <label for="osc_target_port">osc_target_port :</label>
+            <input type="text" name="osc_target_port" id="osc_target_port" placeholder="Ip Addr"
+                value="%osc_target_port%" required>
+        </div>
+        <input type="submit" value="Update">
+    </form>
+
+    <form onsubmit="showEvent(event)" class="form-example">
+        <div class="form-example">
+            <label for="sta_ssid">sta_ssid :</label>
+            <input type="text" name="sta_ssid" id="sta_ssid" placeholder="Ip Addr" value="%sta_ssid%" required>
+        </div>
+        <input type="submit" value="Update">
+    </form>
+
+    <form onsubmit="showEvent(event)" class="form-example">
+        <div class="form-example">
+            <label for="sta_pswd">sta_pswd :</label>
+            <input type="text" name="sta_pswd" id="sta_pswd" placeholder="Ip Addr" value="%sta_pswd%" required>
+        </div>
+        <input type="submit" value="Update">
+    </form>
+
+    <form onsubmit="showEvent(event)" class="form-example">
+        <div class="form-example">
+            <label for="ap_ssid">ap_ssid :</label>
+            <input type="text" name="ap_ssid" id="ap_ssid" placeholder="Ip Addr" value="%ap_ssid%" required>
+        </div>
+        <input type="submit" value="Update">
+    </form>
+
+    <form onsubmit="showEvent(event)" class="form-example">
+        <div class="form-example">
+            <label for="ap_pswd">ap_pswd :</label>
+            <input type="text" name="ap_pswd" id="ap_pswd" placeholder="Ip Addr" value="%ap_pswd%" required>
+        </div>
+        <input type="submit" value="Update">
+    </form>
+
+    <form onsubmit="showEvent(event)" class="form-example">
+        <div class="form-example">
+            <label for="tripode_id">tripode_id :</label>
+            <input type="text" name="tripode_id" id="tripode_id" placeholder="Ip Addr" value="%tripode_id%" required>
+        </div>
+        <input type="submit" value="Update">
+    </form>
+
+
 </body>
 <script>
-    window.addEventListener("load", function (event) {
-        let firstBtn = document.getElementById("firstBtn");
-        firstBtn.addEventListener('click', () => {
-            Socket.send("Hello buddy");
-        })
 
-        var Socket = null;
+    var Socket = null;
+    var values = new Object();
+
+    function showEvent(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const formProps = Object.fromEntries(formData);
+        console.log("Event :", formProps);
+
+        Socket.send(JSON.stringify(formProps));
+
+
+    }
+
+    values["upd_target_ip"] = document.getElementById("upd_target_ip");
+    values["upd_target_port"] = document.getElementById("upd_target_port");
+    values["upd_input_port"] = document.getElementById("upd_input_port");
+    values["osc_target_ip"] = document.getElementById("osc_target_ip");
+    values["osc_target_port"] = document.getElementById("osc_target_port");
+    values["sta_ssid"] = document.getElementById("sta_ssid");
+    values["sta_pswd"] = document.getElementById("sta_pswd");
+    values["ap_ssid"] = document.getElementById("ap_ssid");
+    values["ap_pswd"] = document.getElementById("ap_pswd");
+    values["tripode_id"] = document.getElementById("tripode_id");
+
+
+    window.addEventListener("beforeunload", function (event) {
+        if (Socket != null) {
+
+            Socket.close();
+        }
+
+    })
+
+
+    window.onload = () => {
+        // let firstBtn = document.getElementById("firstBtn");
+        // firstBtn.addEventListener('click', () => {
+        //     Socket.send(JSON.stringify({
+        //         signals: [{
+        //             "value": "write:;#0D300I255P1;12;12",
+        //             "type": "udp"
+        //         },
+        //         {
+        //             "value": "write:;#0D300I255P1;12;13",
+        //             "type": "osc"
+        //         }
+        //         ]
+        //     }));
+        // })
+
         if (window.location.hostname != "")
             Socket = new WebSocket('ws://' + window.location.hostname + '/ws');
         if (Socket) {
             Socket.addEventListener('message', function (event) {
                 console.log('Message from server ', event.data);
-                var arr_from_json = JSON.parse( event.data);
+                var arr_from_json = JSON.parse(event.data);
                 console.log('Parsed json ', arr_from_json);
+
+                for (const [key, value] of Object.entries(arr_from_json["settings"])) {
+                    console.log(`kk ${key}: ${value}`);
+
+                    values[key].value = value;
+
+                }
+
             })
             Socket.addEventListener('error', (event) => {
                 console.log("Error WTF : ", event);
                 window.location.reload();
-             })
+            })
         }
-    })
+    }
 </script>
 
 </html>
