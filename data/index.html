@@ -98,33 +98,33 @@
     </form>
 
 
-    <form onsubmit="showEvent(event)" class="commands-form">
+    <form onsubmit="sendCommands(event)" class="commands-form">
 
         <div class="commands" id="commands">
-            <template id="commands-template">
-                <div class="command">
-                    <label for="command-nu">command :</label>
-                    <input type="text" name="command-nu" id="command-nu" placeholder="command-nu" value="%command-nu%"
-                        required>
-
-                    <div class="protocols">
-                        <div class="protocol">
-                            <label for="protocol-osc-nu">OSC</label>
-                            <input type="radio" id="protocol-osc-nu" name="protocol-nu" value="OSC">
-                        </div>
-                        <div class="protocol">
-                            <label for="protocol-udp-nu">UDP</label>
-                            <input type="radio" id="protocol-udp-nu" name="protocol-nu" value="UDP">
-                        </div>
-                    </div>
-                </div>
-            </template>
         </div>
-        <button onclick="addProtocolButton(event)" id="addProtocol">Ajouter</button>
-        <button onclick="removeProtocolButton(event)" id="removeProtocol">Supprimer</button>
         <input type="submit" value="Update">
+        <button onclick="removeProtocolButton(event)" id="removeProtocol">Supprimer</button>
+        <button onclick="addProtocolButton(event)" id="addProtocol">Ajouter</button>
     </form>
+    
+    <template id="commands-template">
+        <div class="command">
+            <label for="command-nu">command :</label>
+            <input type="text" name="command-nu" id="command-nu" placeholder="command-nu" value="%command-nu%"
+                required>
 
+            <div class="protocols">
+                <div class="protocol">
+                    <label for="protocol-osc-nu">OSC</label>
+                    <input type="radio" id="protocol-osc-nu" name="protocol-nu" value="osc">
+                </div>
+                <div class="protocol">
+                    <label for="protocol-udp-nu">UDP</label>
+                    <input type="radio" id="protocol-udp-nu" name="protocol-nu" value="udp">
+                </div>
+            </div>
+        </div>
+    </template>
 
 </body>
 <script>
@@ -143,6 +143,21 @@
         Socket.send(JSON.stringify(formProps));
 
 
+    }
+
+    function sendCommands(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const formProps = Object.fromEntries(formData);
+        console.log("Event 42:", formProps);
+
+        let responseObject = [];
+
+        for (let index = 0; index < numberOfProtocols; index++) {
+            responseObject.push({ type: formProps[`protocol-${index}`], value: formProps[`command-${index}`] });
+        }
+        console.log("Event 42 packet:", { signals: responseObject });
+        Socket.send(JSON.stringify({ signals: responseObject }));
     }
 
     values["upd_target_ip"] = document.getElementById("upd_target_ip");
@@ -199,7 +214,7 @@
 
     function removeProtocolButton(e) {
         e.preventDefault();
-        if (numberOfProtocols > 0) {
+        if (numberOfProtocols > 1) {
 
             console.log("remove clic");
             const selectedElem = document.getElementById(`commands`);
@@ -220,18 +235,25 @@
 
 
 
-        setTimeout(() => {
+        // setTimeout(() => {
 
-            const dataArray = [{ value: "write:;#0D300I255P1;12;12", type: 'udp' },
-            { value: "write:;#0D300I255P1;12;13", type: 'osc' },
-            { value: "write:;#0D300I255P1;12;14", type: 'udp' }];
+        //     const dataArray = [{ value: "write:;#0D300I255P1;12;12", type: 'udp' },
+        //     { value: "write:;#0D300I255P1;12;13", type: 'osc' },
+        //     { value: "write:;#0D300I255P1;12;14", type: 'udp' }];
+        //             let child2 = document.getElementById(`commands`).lastElementChild; 
+        //     while (child2) {
+        //         console.log("child :", child2);
+        //         document.getElementById(`commands`).removeChild(child2);
+        //         child2 = document.getElementById(`commands`).lastElementChild;
+        //     }
+        //     numberOfProtocols = 0;
+        //     dataArray.forEach((elem, index) => {
+        //         addCommandToHtml(elem, index);
 
-            dataArray.forEach((elem, index) => {
-                addCommandToHtml(elem, index);
-                numberOfProtocols++;
-            })
+        //         numberOfProtocols++;
+        //     })
 
-        }, 500);
+        // }, 500);
         // let firstBtn = document.getElementById("firstBtn");
         // firstBtn.addEventListener('click', () => {
         //     Socket.send(JSON.stringify({
@@ -261,6 +283,24 @@
                     values[key].value = value;
 
                 }
+
+                numberOfProtocols = 0;
+
+                        var child = document.getElementById(`commands`).lastElementChild; 
+                while (child) {
+                    document.getElementById(`commands`).removeChild(child);
+                    child = document.getElementById(`commands`).lastElementChild;
+                }
+
+
+                arr_from_json["signals"].forEach((elem, index) => {
+                    addCommandToHtml(elem, index);
+
+                    numberOfProtocols++;
+                })
+
+
+
 
             })
             Socket.addEventListener('error', (event) => {
