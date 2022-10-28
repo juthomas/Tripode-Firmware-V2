@@ -10,6 +10,32 @@
 
 <body>
 
+
+    <canvas id="c"></canvas>
+
+    <script id="shader-fs" type="x-shader/x-fragment">
+                    #ifdef GL_ES
+                      precision highp float;
+                      #endif
+                void main(void) {
+                 gl_FragColor = vec4(0.2, 2.3, 2.4, 1.0);
+                }
+            </script>
+    
+      <script id="shader-vs" type="x-shader/x-vertex">
+            attribute vec3 vertexPosition;
+    
+          uniform mat4 modelViewMatrix;
+          uniform mat4 perspectiveMatrix;
+    
+           void main(void) {
+              gl_Position = perspectiveMatrix * modelViewMatrix * vec4(  vertexPosition, 1.0);
+          }
+      </script>
+    <script type="text/javascript" src="shaderScript.js"></script>
+
+
+
     <h1>Tripodes settings</h1>
 
     <form onsubmit="showEvent(event)" class="classic-form">
@@ -230,7 +256,7 @@
 
 
 
-    window.onload = () => {
+    addEventListener('load', (event) => {
 
 
 
@@ -308,7 +334,7 @@
                 window.location.reload();
             })
         }
-    }
+    })
 </script>
 
 </html>

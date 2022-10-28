@@ -15,6 +15,7 @@ void setup_ap()
 	
 	server.serveStatic("/tripode.ico", SPIFFS, "/tripode.ico");
 	server.serveStatic("/main.css", SPIFFS, "/main.css");
+	server.serveStatic("/shaderScript.js", SPIFFS, "/shaderScript.js");
 
 	server.addHandler(&ws);
 	server.begin();
