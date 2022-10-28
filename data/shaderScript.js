@@ -467,7 +467,7 @@ function draw2() {
 
 
 function timer() {
-//   drawType = (drawType + 1) % 3;
+  drawType = (drawType + 1) % 3;
 
   setTimeout(timer, 1500);
 }
