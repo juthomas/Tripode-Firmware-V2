@@ -154,13 +154,36 @@ body .cybr-btn+.cybr-btn {
     bottom: calc(var(--border) * -1);
     background: var(--shadow-primary);
     text-shadow: 2px 2px var(--shadow-primary), -2px -2px var(--shadow-secondary);
-    clip-path: var(--clip);
+    /* clip-path: var(--clip); */
+    /* transform: translate(0, 0); */
+    clip-path: var(--clip-four);
     animation: glitch_stdby 6s infinite;
     /* display: none; */
 }
 
+.cybr-form:nth-child(4n+0) .cybr-btn__glitch {
+    animation-delay: 1s;
+}  
+.cybr-form:nth-child(4n+1) .cybr-btn__glitch {
+    animation-delay: 0s;
+}  
+
+.cybr-form:nth-child(4n+2) .cybr-btn__glitch {
+    animation-delay: 3s;
+}  
+
+.cybr-form:nth-child(4n+3) .cybr-btn__glitch {
+    animation-delay: 2s;
+}  
+
+
+
+
+
+
 .cybr-btn:hover .cybr-btn__glitch {
     /* display: block; */
+    animation-delay: 0s;
     animation: glitch 1s infinite;
 
 }
@@ -384,10 +407,11 @@ body {
 }
 
 .glitch {
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     max-width: 100%;
-    position: absolute;
+    position: fixed;
+    top: 0;
     z-index: -10;
     display: flex;
     justify-content: center;
