@@ -36,6 +36,41 @@ justify-content: end;
 	background-color: rgb(73, 73, 73); */
 }
 
+.cybr-form {
+	display: flex;
+	gap: 20px;
+}
+
+.cybr-input-container {
+	margin-top: 20px;
+	/* margin-bottom: 25px; */
+	position: relative;
+  }
+
+.cybr-input-container input {
+	padding: 10px 20px;
+	color: black;
+	outline: none;
+	background: #72dec2;
+	/* border-radius: 0 6px 0 6px; */
+	font-size: 16px;
+	border: none;
+	/* border: 2px solid #ffb545; */
+	border-right: 4px solid #ffb545;
+	transition: 0.2s ease;
+}
+
+.cybr-input-container label {
+	position: absolute;
+	top: -17px;
+	left: 0px;
+	background: #ffb545;
+	font-weight: 600;
+	color: #000;
+	padding: 0 16px;
+  }
+
+
 .protocols {
     display: flex;
     flex-direction: column;
@@ -69,7 +104,7 @@ justify-content: end;
         background-color: rgb(73, 73, 73);
 }
 
-input[type=text], input[type=number]{
+/* input[type=text], input[type=number]{
 	padding:3px;
 	margin:3px;
 	box-shadow:none;
@@ -98,4 +133,4 @@ input[type=submit]:hover, input[type=button]:hover{
 	border-color: rgb(255, 255, 255);
 	color: #ffffff;
 	background-color: rgb(56, 56, 56);
-}
+} */

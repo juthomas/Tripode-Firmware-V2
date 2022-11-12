@@ -5,16 +5,20 @@
     --gap-vertical: 5px;
     --time-anim: 4s;
     --delay-anim: 4s;
-    --blend-mode-1: none;
+    /* --blend-mode-1: none;
     --blend-mode-2: none;
     --blend-mode-3: none;
-    --blend-mode-4: none;
+    --blend-mode-4: none; */
+    --blend-mode-1: overlay;
+    --blend-mode-2: overlay;
+    --blend-mode-3: overlay;
+    --blend-mode-4: overlay;
     --blend-mode-5: overlay;
-    --blend-color-1: transparent;
-    --blend-color-2: transparent;
-    --blend-color-3: transparent;
-    --blend-color-4: transparent;
-    --blend-color-5: #948137e2;
+    --blend-color-1: #ffb54504;
+    --blend-color-2: #72dec11b;
+    --blend-color-3: #ffb54509;
+    --blend-color-4: #72dec135;
+    --blend-color-5: #f8c67b4f;
 }
 
 *,
@@ -29,11 +33,11 @@
 
 
 
-@font-face {
+/* @font-face {
     font-family: Cyber;
     src: url("https://assets.codepen.io/605876/Blender-Pro-Bold.otf");
     font-display: swap;
-}
+} */
 
 * {
     box-sizing: border-box;
@@ -45,7 +49,7 @@ body {
     flex-direction: column;
     justify-content: center;
     min-height: 100vh;
-    font-family: 'Cyber', sans-serif;
+    /* font-family: 'Cyber', sans-serif; */
     background: black;
 }
 
@@ -79,16 +83,17 @@ body .cybr-btn+.cybr-btn {
     cursor: pointer;
     background: transparent;
     display: inline-block;
-    text-transform: uppercase;
-    font-family: var(--font-heading-family);
+    /* text-transform: uppercase; */
+    font-weight: 600;
+    /* font-family: var(--font-heading-family); */
     outline: transparent;
-    letter-spacing: 2px;
+    /* letter-spacing: px; */
     position: relative;
-    font-size: 1.4rem !important;
+    /* font-size: 1.4rem !important; */
     border: 0;
-    padding: 0 2rem;
+    padding: 0 15px;
     text-decoration: none;
-    line-height: 60px;
+    line-height: 30px;
     transition: background .2s;
     z-index: 1;
 }
@@ -101,6 +106,12 @@ body .cybr-btn+.cybr-btn {
 .cybr-btn:active {
     --primary: #4b917f;
 }
+
+.cybr-btn:focus-visible {
+    outline: 2px solid #ffb545;
+    outline-offset: 1px;
+    /* box-shadow: 0 0 0 .3rem rgb(var(--color-background)),0 0 .5rem .4rem rgba(var(--color-foreground),.3); */
+  }
 
 .cybr-btn:after,
 .cybr-btn:before {
