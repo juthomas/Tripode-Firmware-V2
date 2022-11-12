@@ -2,11 +2,11 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+
     <link rel="icon" href="tripode.ico">
     <link rel="stylesheet" href="glitchBG.css">
     <link rel="stylesheet" href="main.css">
-
 </head>
 
 <body>
@@ -16,8 +16,10 @@
         <div class="glitch__item"></div>
         <div class="glitch__item"></div>
         <div class="glitch__item"></div>
+        
     </div>
-
+    
+    <h1 class="glitch__title">AZIMUT</h1>
     <div class="forms-container">
 
 
@@ -157,9 +159,28 @@
 
                 <div class="commands" id="commands">
                 </div>
-                <input type="submit" value="Update">
-                <button onclick="removeProtocolButton(event)" id="removeProtocol">Supprimer</button>
-                <button onclick="addProtocolButton(event)" id="addProtocol">Ajouter</button>
+                <!-- <input type="submit" value="Update"> -->
+
+                <div class="commands-buttons">
+
+                    <button type='submit' class="cybr-btn">
+                        Update
+                        <span aria-hidden class="cybr-btn__glitch">Update</span>
+                    </button>
+
+                    <button style="font-size: 26px;" onclick="removeProtocolButton(event)" id="removeProtocol"
+                        class="cybr-btn">
+                        -
+                        <span aria-hidden class="cybr-btn__glitch">-</span>
+                    </button>
+                    <button style="font-size: 20px;" onclick="addProtocolButton(event)" id="addProtocol" class="cybr-btn">
+                        +
+                        <span aria-hidden class="cybr-btn__glitch">+</span>
+                    </button>
+                </div>
+
+                <!-- <button onclick="removeProtocolButton(event)" id="removeProtocol">Supprimer</button>
+                <button onclick="addProtocolButton(event)" id="addProtocol">Ajouter</button> -->
             </form>
 
             <template id="commands-template">
@@ -172,12 +193,12 @@
                     </div>
                     <div class="protocols">
                         <div class="protocol">
-                            <label for="protocol-osc-nu">OSC</label>
                             <input type="radio" id="protocol-osc-nu" name="protocol-nu" value="osc">
+                            <label for="protocol-osc-nu">OSC</label>
                         </div>
                         <div class="protocol">
-                            <label for="protocol-udp-nu">UDP</label>
                             <input type="radio" id="protocol-udp-nu" name="protocol-nu" value="udp">
+                            <label for="protocol-udp-nu">UDP</label>
                         </div>
                     </div>
                 </div>

@@ -53,9 +53,7 @@ body {
     background: black;
 }
 
-body .cybr-btn+.cybr-btn {
-    margin-top: 2rem;
-}
+
 
 .cybr-btn {
     color: #000 !important;
@@ -123,6 +121,7 @@ body .cybr-btn+.cybr-btn {
     bottom: 0;
     clip-path: var(--clip);
     z-index: -1;
+    
 }
 
 .cybr-btn:before {
@@ -474,18 +473,18 @@ body {
         transform: translate3d(0, 0, 0);
     }
 }
+.glitch__title {
+    /* font-family: "Bungee", cursive; */
+    font-size: 60px;
 
-.glitch .glitch__title {
-    font-family: "Bungee", cursive;
-    font-size: 100px;
-    color: #ffffff;
+    color: #9d9d9d;
     position: relative;
     text-transform: uppercase;
 }
 
-.glitch .glitch__title:before,
-.glitch .glitch__title:after {
-    content: "GLITCH";
+ .glitch__title:before,
+.glitch__title:after {
+    content: "AZIMUT";
     position: absolute;
     left: 0;
     top: 0;
@@ -494,16 +493,16 @@ body {
     overflow: hidden;
 }
 
-.glitch .glitch__title:before {
-    left: 2px;
-    text-shadow: -1px 0 #00ffea;
+ .glitch__title:before {
+    left: 5px;
+    text-shadow: -1px 0 #72dec2;
     clip: rect(24px, 550px, 90px, 0);
     animation: glitch-anim 2s linear infinite alternate-reverse;
 }
 
-.glitch .glitch__title:after {
-    left: -2px;
-    text-shadow: -1px 0 #fe3a7f;
+.glitch__title:after {
+    left: -5px;
+    text-shadow: -1px 0 #ffb545;
     clip: rect(85px, 550px, 140px, 0);
     animation: glitch-anim 2s 1s linear infinite alternate-reverse;
 }
