@@ -61,6 +61,7 @@ gap: 30px;
 }
 
 .cybr-input-container label {
+	user-select: none;
 	position: absolute;
 	top: -17px;
 	left: 0px;
