@@ -2,7 +2,8 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+    <meta charset="UTF-8" name="viewport"
+        content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 
     <link rel="icon" href="tripode.ico">
     <link rel="stylesheet" href="glitchBG.css">
@@ -16,10 +17,17 @@
         <div class="glitch__item"></div>
         <div class="glitch__item"></div>
         <div class="glitch__item"></div>
-        
+
     </div>
-    
-    <h1 class="glitch__title">AZIMUT</h1>
+    <div style="position:relative; width: 260px;">
+        <div class="title1">
+            <h1 class="glitch__title">AZIMUT</h1>
+        </div>
+        <div class="title2">
+
+            <h1 class="glitch__title2">السمت</h1>
+        </div>
+    </div>
     <div class="forms-container">
 
 
@@ -50,7 +58,7 @@
 
             <form onsubmit="showEvent(event)" class="cybr-form">
                 <div class="cybr-input-container">
-                    <label for="upd_target_port">upd_target_port :</label>
+                    <label for="upd_target_port">UDP Target Port</label>
                     <input type="text" name="upd_target_port" id="upd_target_port" placeholder="Ip Addr"
                         value="%upd_target_port%" required>
                 </div>
@@ -62,7 +70,7 @@
 
             <form onsubmit="showEvent(event)" class="cybr-form">
                 <div class="cybr-input-container">
-                    <label for="upd_input_port">upd_input_port :</label>
+                    <label for="upd_input_port">UDP Input Port</label>
                     <input type="text" name="upd_input_port" id="upd_input_port" placeholder="Ip Addr"
                         value="%upd_input_port%" required>
                 </div>
@@ -74,7 +82,7 @@
 
             <form onsubmit="showEvent(event)" class="cybr-form">
                 <div class="cybr-input-container">
-                    <label for="osc_target_ip">osc_target_ip :</label>
+                    <label for="osc_target_ip">OSC Target IP</label>
                     <input type="text" name="osc_target_ip" id="osc_target_ip" placeholder="Ip Addr"
                         value="%osc_target_ip%" required>
                 </div>
@@ -86,7 +94,7 @@
 
             <form onsubmit="showEvent(event)" class="cybr-form">
                 <div class="cybr-input-container">
-                    <label for="osc_target_port">osc_target_port :</label>
+                    <label for="osc_target_port">OSC Target Port :</label>
                     <input type="text" name="osc_target_port" id="osc_target_port" placeholder="Ip Addr"
                         value="%osc_target_port%" required>
                 </div>
@@ -98,7 +106,7 @@
 
             <form onsubmit="showEvent(event)" class="cybr-form">
                 <div class="cybr-input-container">
-                    <label for="sta_ssid">sta_ssid :</label>
+                    <label for="sta_ssid">Station SSID</label>
                     <input type="text" name="sta_ssid" id="sta_ssid" placeholder="Ip Addr" value="%sta_ssid%" required>
                 </div>
                 <button type='submit' class="cybr-btn">
@@ -109,7 +117,7 @@
 
             <form onsubmit="showEvent(event)" class="cybr-form">
                 <div class="cybr-input-container">
-                    <label for="sta_pswd">sta_pswd :</label>
+                    <label for="sta_pswd">Station Password</label>
                     <input type="text" name="sta_pswd" id="sta_pswd" placeholder="Ip Addr" value="%sta_pswd%" required>
                 </div>
                 <button type='submit' class="cybr-btn">
@@ -120,7 +128,7 @@
 
             <form onsubmit="showEvent(event)" class="cybr-form">
                 <div class="cybr-input-container">
-                    <label for="ap_ssid">ap_ssid :</label>
+                    <label for="ap_ssid">Access Point SSID</label>
                     <input type="text" name="ap_ssid" id="ap_ssid" placeholder="Ip Addr" value="%ap_ssid%" required>
                 </div>
                 <button type='submit' class="cybr-btn">
@@ -131,7 +139,7 @@
 
             <form onsubmit="showEvent(event)" class="cybr-form">
                 <div class="cybr-input-container">
-                    <label for="ap_pswd">ap_pswd :</label>
+                    <label for="ap_pswd">Access Point Password</label>
                     <input type="text" name="ap_pswd" id="ap_pswd" placeholder="Ip Addr" value="%ap_pswd%" required>
                 </div>
                 <button type='submit' class="cybr-btn">
@@ -142,7 +150,7 @@
 
             <form onsubmit="showEvent(event)" class="cybr-form">
                 <div class="cybr-input-container">
-                    <label for="tripode_id">tripode_id :</label>
+                    <label for="tripode_id">Identifier</label>
                     <input type="text" name="tripode_id" id="tripode_id" placeholder="Ip Addr" value="%tripode_id%"
                         required>
                 </div>
@@ -173,7 +181,8 @@
                         -
                         <span aria-hidden class="cybr-btn__glitch">-</span>
                     </button>
-                    <button style="font-size: 20px;" onclick="addProtocolButton(event)" id="addProtocol" class="cybr-btn">
+                    <button style="font-size: 20px;" onclick="addProtocolButton(event)" id="addProtocol"
+                        class="cybr-btn">
                         +
                         <span aria-hidden class="cybr-btn__glitch">+</span>
                     </button>
@@ -187,7 +196,7 @@
                 <div class="command ">
                     <div class="cybr-input-container">
 
-                        <label for="command-nu">command :</label>
+                        <label for="command-nu">Command</label>
                         <input type="text" name="command-nu" id="command-nu" placeholder="command-nu"
                             value="%command-nu%" required>
                     </div>

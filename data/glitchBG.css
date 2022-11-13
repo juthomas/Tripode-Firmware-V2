@@ -476,9 +476,22 @@ body {
 .glitch__title {
     /* font-family: "Bungee", cursive; */
     font-size: 60px;
+letter-spacing: -5px;
 
     color: #9d9d9d;
     position: relative;
+    text-transform: uppercase;
+}
+
+.glitch__title2 {
+    /* font-family: "Bungee", cursive; */
+    font-size: 100px;
+    color: #9d9d9d;
+    position: absolute;
+    top: -17px;
+    left: 20px;
+    
+/* letter-spacing: 5px; */
     text-transform: uppercase;
 }
 
@@ -493,18 +506,187 @@ body {
     overflow: hidden;
 }
 
- .glitch__title:before {
+.glitch__title2:before,
+.glitch__title2:after {
+    content: "السمت";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+
+.glitch__title2:before {
     left: 5px;
     text-shadow: -1px 0 #72dec2;
     clip: rect(24px, 550px, 90px, 0);
     animation: glitch-anim 2s linear infinite alternate-reverse;
 }
 
+.glitch__title2:before {
+    left: 5px;
+    text-shadow: -1px 0 #72dec2;
+    clip: rect(24px, 550px, 90px, 0);
+    animation: glitch-anim 2s linear infinite alternate-reverse;
+}
+
+
+
 .glitch__title:after {
     left: -5px;
     text-shadow: -1px 0 #ffb545;
     clip: rect(85px, 550px, 140px, 0);
     animation: glitch-anim 2s 1s linear infinite alternate-reverse;
+}
+.glitch__title2:after {
+    left: -5px;
+    text-shadow: -1px 0 #ffb545;
+    clip: rect(85px, 550px, 140px, 0);
+    animation: glitch-anim 2s 1s linear infinite alternate-reverse;
+}
+
+.title2 {
+    /* visibility: hidden; */
+    opacity: 0;
+    user-select: none;
+    animation: visible-anim1 7s infinite alternate;
+}
+
+.title1 {
+    user-select: none;
+
+    animation: visible-anim2 7s  infinite  alternate;
+}
+@keyframes visible-anim1 {
+    0% {
+        opacity: 0;
+    }
+
+    3% {
+        opacity: 0;
+    }
+
+    3.1% {
+        opacity: 1;
+    }
+
+    4.0% {
+        opacity: 1;
+    }
+    4.1% {
+        opacity: 0;
+    }
+
+
+
+    70% {
+        opacity: 0;
+    }
+    70.1% {
+        opacity: 1;
+    }
+
+
+    71% {
+        opacity: 1;
+    }
+    71.1% {
+        opacity: 0;
+    }
+
+    74% {
+        opacity: 0;
+    }
+    74.1% {
+        opacity: 1;
+    }
+
+
+    77% {
+        opacity: 1;
+    }
+    77.1% {
+        opacity: 0;
+    }
+
+
+    80% {
+        opacity: 0;
+    }
+    80.1% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes visible-anim2 {
+    0% {
+        opacity: 1;
+    }
+
+    3% {
+        opacity: 1;
+    }
+
+    3.1% {
+        opacity: 0;
+    }
+
+    4.0% {
+        opacity: 0;
+    }
+    4.1% {
+        opacity: 1;
+    }
+
+    70% {
+        opacity: 1;
+    }
+    70.1% {
+        opacity: 0;
+    }
+
+
+    72% {
+        opacity: 0;
+    }
+    72.1% {
+        opacity: 1;
+    }
+
+    74% {
+        opacity: 1;
+    }
+    74.1% {
+        opacity: 0;
+    }
+
+    
+    77% {
+        opacity: 0;
+    }
+    77.1% {
+        opacity: 1;
+    }
+
+
+
+    80% {
+        opacity: 1;
+    }
+    80.1% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 0;
+    }
+
+
 }
 
 @keyframes glitch-anim {
