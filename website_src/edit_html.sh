@@ -1,14 +1,15 @@
 #!/bin/bash
 
-# Vérifier si un fichier a été passé en paramètre
+# Job : Utility File to replace js and css files in react builded html
+# Check if a file has been passed as parameter
 if [ -z "$1" ]; then
-  echo "Veuillez spécifier un nom de fichier en tant que paramètre"
+  echo "Please specify a filename as parameter"
   exit 1
 fi
 
-# Récupérer le nom de fichier en tant que paramètre
+# Get the filename as parameter
 file="$1"
 
-# Modifier les chaînes de caractères
+# Modify the strings
 sed -i '' 's|/assets/index-[0-9a-zA-Z]*.js|index.js|g' $file
 sed -i '' 's|/assets/index-[0-9a-zA-Z]*.css|index.css|g' $file
