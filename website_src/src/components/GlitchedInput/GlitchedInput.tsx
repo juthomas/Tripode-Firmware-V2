@@ -1,3 +1,4 @@
+import './index.css'
 export interface GlitchedInputProps {
   label: string;
   placeholder?: string;
@@ -12,15 +13,22 @@ export const GlitchedInput = ({
   setInputState,
 }: GlitchedInputProps): JSX.Element => {
   return (
-    <div>
+    <div style={{position : 'relative'}}>
       <label>{label}</label>
       <input
+      className="glitched-input"
         type="text"
         onChange={(e) => setInputState(e.target.value)}
         placeholder={placeholder}
         value={inputState}
         required
-      ></input>
+      >
+      </input>
+      {/* <span
+        aria-hidden
+        className="glitched-input-animation"
+        children={inputState}
+      /> */}
     </div>
   );
 };
