@@ -1,7 +1,7 @@
 .title2 {
   /* visibility: hidden; */
   position: absolute;
-  top: 0;
+  top: -20px;
   left: 0;
   opacity: 0;
   user-select: none;
