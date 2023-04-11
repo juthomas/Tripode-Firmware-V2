@@ -11,5 +11,5 @@ fi
 file="$1"
 
 # Modify the strings
-sed -i '' 's|/assets/index-[0-9a-zA-Z]*.js|index.js|g' $file
-sed -i '' 's|/assets/index-[0-9a-zA-Z]*.css|index.css|g' $file
+sed -i 's|/assets/index-[0-9a-zA-Z]*.js|index.js|g' $file
+sed -i 's|/assets/index-[0-9a-zA-Z]*.css|index.css|g' $file
