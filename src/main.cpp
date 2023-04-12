@@ -26,7 +26,7 @@ void setup_ap()
 	WiFi.mode(WIFI_AP);
 	WiFi.softAPConfig(localIP, gatewayIP, subnetMask);
 	// WiFi.softAP(json_data.ap_ssid.c_str(), json_data.ap_pswd.c_str(), 6, 0, 10);
-	WiFi.softAP(json_data.ap_ssid.c_str(), NULL, 6, 0, 10);
+	WiFi.softAP(json_data.ap_ssid.c_str(), NULL, WIFI_CHANNEL, 0, MAX_CLIENTS);
 
 	dnsServer.setTTL(300);			   // set 5min client side cache for DNS
 	dnsServer.start(53, "*", localIP); // if DNSServer is started with "*" for domain name, it will reply with provided IP to all DNS request
@@ -72,7 +72,6 @@ void setup_ap()
 	server.onNotFound([](AsyncWebServerRequest *request)
 					  { request->send(404); });
 	ws.onEvent(onEvent);
-
 
 	// Files used for web server
 	server.serveStatic("/index.css", SPIFFS, "/index.css");
@@ -143,11 +142,24 @@ void setup()
 {
 	init_basic_functions();
 	display_home_page();
-
 	load_spiffs();
-	setup_ap();
-	print_json_data();
 
+	// Waiting for button press
+	for (;;)
+	{
+		if (current_mode & MODE_AP)
+		{
+			setup_ap();
+			break;
+		}
+		else if (current_mode & MODE_STA)
+		{
+			// setup_sta();
+			break;
+		}
+		delay(10);
+	}
+	print_json_data();
 	// update_spiffs();
 }
 
@@ -158,6 +170,7 @@ void printMacAddress(const uint8_t *mac)
 
 void loop()
 {
+	display_ram_usage();
 	dnsServer.processNextRequest(); // I call this atleast every 10ms in my other projects (can be higher but I haven't tested it for stability)
 	delay(1);						// seems to help with stability, if you are doing other things in the loop this may not be needed
 }
