@@ -17,13 +17,12 @@ void parse_json_from_client(uint8_t *data)
 {
     StaticJsonDocument<JSON_SIZE> doc;
 
-    DeserializationError error = deserializeJson(doc, data);
+    DeserializationError error = deserializeJson(doc, data, JSON_SIZE);
     if (error)
     {
-        error_msg(error.c_str());
+        Serial.printf("[ERROR] %s\n", error.c_str());
         return;
     }
-
     JsonObject documentRoot = doc.as<JsonObject>();
 
     if (doc.containsKey("signals"))
