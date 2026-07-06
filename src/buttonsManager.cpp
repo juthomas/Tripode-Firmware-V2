@@ -11,6 +11,8 @@ static void cycle_display_mode()
 		else if ((current_mode & MODE_MASK) == RUNE_MODE)
 			current_mode = MIDI_MODE | STA_MASK;
 		else if ((current_mode & MODE_MASK) == MIDI_MODE)
+			current_mode = WIFI_QR_MODE | STA_MASK;
+		else if ((current_mode & MODE_MASK) == WIFI_QR_MODE)
 			current_mode = STD_MODE | STA_MASK;
 	}
 	else if (current_mode & AP_MASK)
@@ -24,6 +26,8 @@ static void cycle_display_mode()
 		else if ((current_mode & MODE_MASK) == MIDI_MODE)
 			current_mode = AP_MODE | AP_MASK;
 		else if ((current_mode & MODE_MASK) == AP_MODE)
+			current_mode = WIFI_QR_MODE | AP_MASK;
+		else if ((current_mode & MODE_MASK) == WIFI_QR_MODE)
 			current_mode = STD_MODE | AP_MASK;
 	}
 }

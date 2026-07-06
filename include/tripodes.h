@@ -224,6 +224,7 @@ void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bo
 void drawRunes(TFT_eSPI tft, float alpha, bool is_upd_sending, bool is_osc_sending);
 void drawNetworkActivity(bool is_udp_sending, bool is_osc_sending);
 void drawWifiQrScreen(bool is_udp_sending, bool is_osc_sending);
+void invalidate_wifi_qr_screen();
 
 #ifdef SET_GLOBAL_VAR
 uint8_t current_mode = NONE_MODE;

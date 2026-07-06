@@ -53,6 +53,14 @@ void draw_current_mode_screen(t_sensors *sensors)
 {
 	const char *ssid_label = is_ap_mode ? json_data.ap_ssid.c_str() : json_data.sta_ssid.c_str();
 
+	static uint8_t last_screen_mode = 0xFF;
+	uint8_t mode = current_mode & MODE_MASK;
+	if (mode != last_screen_mode)
+	{
+		invalidate_wifi_qr_screen();
+		last_screen_mode = mode;
+	}
+
 	if ((current_mode & MODE_MASK) == STD_MODE)
 		drawMotorsActivity(tft, pwmValues, json_data.udp_input_port, ssid_label, udp_sending, osc_sending);
 	else if ((current_mode & MODE_MASK) == MIDI_MODE)
@@ -63,4 +71,6 @@ void draw_current_mode_screen(t_sensors *sensors)
 		drawRunes(tft, gyro_visual_metric(sensors), udp_sending, osc_sending);
 	else if ((current_mode & MODE_MASK) == AP_MODE)
 		drawNetworkActivity(udp_sending, osc_sending);
+	else if ((current_mode & MODE_MASK) == WIFI_QR_MODE)
+		drawWifiQrScreen(udp_sending, osc_sending);
 }
