@@ -1,7 +1,7 @@
 #include "tripodes.h"
 #include <qrcode.h>
 
-#define QR_QUIET_ZONE_MODULES 4
+#define QR_QUIET_ZONE_MODULES 2
 #define QR_MIN_MODULE_PX 3
 
 static void trim_string(std::string &s)
@@ -102,18 +102,58 @@ static bool ensure_qr_cached(const std::string &cache_key, const std::string &wi
 	return false;
 }
 
-static int qr_scale_for_modules(int modules, int max_px)
+static int qr_scale_for_modules(int modules, int max_w, int max_h)
 {
-	int scale = max_px / (modules + 2 * QR_QUIET_ZONE_MODULES);
+	int limit = max_w < max_h ? max_w : max_h;
+	int scale = limit / modules;
 	if (scale < QR_MIN_MODULE_PX)
-		scale = QR_MIN_MODULE_PX;
-	int total = modules * scale + 2 * QR_QUIET_ZONE_MODULES * scale;
-	while (scale > QR_MIN_MODULE_PX && total > max_px)
-	{
+		return QR_MIN_MODULE_PX;
+
+	// Screen is already white; keep at least 2 modules of margin on each side.
+	while (scale > QR_MIN_MODULE_PX && (limit - modules * scale) < 2 * QR_QUIET_ZONE_MODULES * scale)
 		scale--;
-		total = modules * scale + 2 * QR_QUIET_ZONE_MODULES * scale;
-	}
+
 	return scale;
+}
+
+static void draw_wifi_header(const std::string &ssid, const std::string &pswd)
+{
+	tft.setTextSize(1);
+	tft.setTextFont(1);
+	tft.setTextDatum(TL_DATUM);
+	tft.setTextColor(TFT_BLACK);
+	tft.setCursor(0, 2);
+	tft.printf("%s\n", ssid.c_str());
+	tft.printf("%s", pswd.c_str());
+}
+
+static void draw_qr_on_tft(int max_w, int qr_y, int qr_h, int &out_scale)
+{
+	if (!qr_cache.valid)
+	{
+		out_scale = 0;
+		return;
+	}
+
+	int modules = qr_cache.qrcode.size;
+	int scale = qr_scale_for_modules(modules, max_w, qr_h);
+	int qr_px = modules * scale;
+	int x = (max_w - qr_px) / 2;
+	int y = qr_y + (qr_h - qr_px) / 2;
+
+	for (int row = 0; row < modules; row++)
+	{
+		for (int col = 0; col < modules; col++)
+		{
+			if (!qrcode_getModule(&qr_cache.qrcode, col, row))
+				continue;
+			tft.fillRect(x + col * scale,
+						 y + row * scale,
+						 scale, scale, TFT_BLACK);
+		}
+	}
+
+	out_scale = scale;
 }
 
 static void draw_qr_error_on_tft(const char *message)
@@ -125,39 +165,6 @@ static void draw_qr_error_on_tft(const char *message)
 	tft.setTextColor(TFT_RED);
 	tft.setCursor(0, 0);
 	tft.printf("QR error\n%s\n", message);
-}
-
-static void draw_qr_on_tft(int max_w, int max_h, int &out_scale)
-{
-	if (!qr_cache.valid)
-	{
-		out_scale = 0;
-		return;
-	}
-
-	int modules = qr_cache.qrcode.size;
-	int scale = qr_scale_for_modules(modules, max_w < max_h ? max_w : max_h);
-	int qr_px = modules * scale;
-	int quiet_px = QR_QUIET_ZONE_MODULES * scale;
-	int total = qr_px + 2 * quiet_px;
-	int x = (max_w - total) / 2;
-	int y = (max_h - total) / 2;
-
-	tft.fillRect(x, y, total, total, TFT_WHITE);
-
-	for (int row = 0; row < modules; row++)
-	{
-		for (int col = 0; col < modules; col++)
-		{
-			if (!qrcode_getModule(&qr_cache.qrcode, col, row))
-				continue;
-			tft.fillRect(x + quiet_px + col * scale,
-						 y + quiet_px + row * scale,
-						 scale, scale, TFT_BLACK);
-		}
-	}
-
-	out_scale = scale;
 }
 
 void drawWifiQrScreen(bool is_udp_sending, bool is_osc_sending)
@@ -192,8 +199,11 @@ void drawWifiQrScreen(bool is_udp_sending, bool is_osc_sending)
 
 	tft.fillScreen(TFT_WHITE);
 
+	const int header_h = 22;
+	draw_wifi_header(ssid, pswd);
+
 	int scale = 0;
-	draw_qr_on_tft(tft.width(), tft.height(), scale);
+	draw_qr_on_tft(tft.width(), header_h, tft.height() - header_h, scale);
 
 	Serial.printf("[QR] payload=%s len=%u version=%u modules=%u scale=%d\n",
 				  payload.c_str(), (unsigned)payload.length(),
