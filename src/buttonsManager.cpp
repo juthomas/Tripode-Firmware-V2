@@ -1,8 +1,36 @@
 #include "tripodes.h"
-// SINGLE_CLICK      1
-// DOUBLE_CLICK      2
-// TRIPLE_CLICK      3
-// LONG_CLICK        4
+
+static void cycle_display_mode()
+{
+	if (current_mode & STA_MASK)
+	{
+		if ((current_mode & MODE_MASK) == STD_MODE)
+			current_mode = SENSORS_MODE | STA_MASK;
+		else if ((current_mode & MODE_MASK) == SENSORS_MODE)
+			current_mode = DFA_MODE | STA_MASK;
+		else if ((current_mode & MODE_MASK) == DFA_MODE)
+			current_mode = RUNE_MODE | STA_MASK;
+		else if ((current_mode & MODE_MASK) == RUNE_MODE)
+			current_mode = MIDI_MODE | STA_MASK;
+		else if ((current_mode & MODE_MASK) == MIDI_MODE)
+			current_mode = STD_MODE | STA_MASK;
+	}
+	else if (current_mode & AP_MASK)
+	{
+		if ((current_mode & MODE_MASK) == STD_MODE)
+			current_mode = SENSORS_MODE | AP_MASK;
+		else if ((current_mode & MODE_MASK) == SENSORS_MODE)
+			current_mode = DFA_MODE | AP_MASK;
+		else if ((current_mode & MODE_MASK) == DFA_MODE)
+			current_mode = RUNE_MODE | AP_MASK;
+		else if ((current_mode & MODE_MASK) == RUNE_MODE)
+			current_mode = MIDI_MODE | AP_MASK;
+		else if ((current_mode & MODE_MASK) == MIDI_MODE)
+			current_mode = AP_MODE | AP_MASK;
+		else if ((current_mode & MODE_MASK) == AP_MODE)
+			current_mode = STD_MODE | AP_MASK;
+	}
+}
 
 void IRAM_ATTR button_loop()
 {
@@ -14,36 +42,28 @@ void IRAM_ATTR left_btn_handler(Button2 &btn)
 {
 	uint32_t click_type = btn.getClickType();
 
-	if (!current_mode)
+	if (current_mode == NONE_MODE)
 	{
-		current_mode = MODE_AP;
+		current_mode = AP_MODE | AP_MASK;
+		return;
 	}
 
-	tft.setTextSize(1);
-	tft.setTextColor(TFT_WHITE);
-	tft.setCursor(0, 0);
-	tft.setTextDatum(MC_DATUM);
-	tft.fillScreen(TFT_BLACK);
-	tft.setCursor(0, 0);
-	tft.printf("Left btn clicked, clic type : %d", click_type);
-	Serial.printf("Left btn clicked, clic type : %d\n", click_type);
+	if (click_type == SINGLE_CLICK || click_type == LONG_CLICK)
+		udp_sending = !udp_sending;
+	if (click_type == DOUBLE_CLICK)
+		osc_sending = !osc_sending;
 }
 
 void IRAM_ATTR right_btn_handler(Button2 &btn)
 {
 	uint32_t click_type = btn.getClickType();
-	if (!current_mode)
+
+	if (current_mode == NONE_MODE)
 	{
-		current_mode = MODE_STA;
+		current_mode = STD_MODE | STA_MASK;
+		return;
 	}
 
-	tft.setTextSize(1);
-	tft.setTextColor(TFT_WHITE);
-	tft.setCursor(0, 0);
-	tft.setTextDatum(MC_DATUM);
-
-	tft.fillScreen(TFT_BLACK);
-	tft.setCursor(0, 0);
-	tft.printf("Right btn clicked, clic type : %d", click_type);
-	Serial.printf("Right btn clicked, clic type : %d\n", click_type);
+	if (click_type == SINGLE_CLICK || click_type == LONG_CLICK)
+		cycle_display_mode();
 }

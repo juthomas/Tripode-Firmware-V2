@@ -12,48 +12,18 @@ void display_home_page()
 	tft.setTextColor(TFT_BLUE);
 	tft.printf("STA mode");
 	tft.setCursor(0, 0);
-	tft.setTextColor(TFT_BLACK);
+	tft.setTextColor(TFT_WHITE);
 }
 
 void display_ram_usage()
 {
-	TFT_eSprite drawing_sprite = TFT_eSprite(&tft);
-	drawing_sprite.setColorDepth(8);
-	drawing_sprite.createSprite(tft.width(), tft.height());
-
-	uint32_t x = 0;
-	uint32_t y = 0;
-
-	uint32_t color1 = TFT_GREEN;
-	uint32_t color2 = TFT_WHITE;
-	uint32_t color3 = TFT_BLUE;
-	uint32_t color4 = TFT_RED;
-
-	ESP.getFreeHeap();
-	
-
-	drawing_sprite.fillSprite(TFT_BLACK);
-	drawing_sprite.setTextSize(2);
-	drawing_sprite.setTextFont(1);
-	drawing_sprite.setTextColor(TFT_GREEN);
-	drawing_sprite.setTextDatum(MC_DATUM);
-
-	drawing_sprite.setCursor(x, y);
-
-	drawing_sprite.printf("Ram Usage");
-
-	drawing_sprite.fillRect(x, y + 30, map((long)(532480 - ESP.getFreeHeap()), 0, 532480, 0, 100), 30, color1);
-	drawing_sprite.setCursor(x + 35, y + 37);
-	drawing_sprite.setTextColor(TFT_DARKGREY);
-	drawing_sprite.printf("%02ld%%", map((long)(532480 - ESP.getFreeHeap()), 0, 532480, 0, 100));
-	drawing_sprite.setTextSize(1);
-	drawing_sprite.setCursor(x + 1, y + 65);
-	drawing_sprite.setTextColor(TFT_WHITE);
-	drawing_sprite.printf("%d/532480 Bytes", 532480 - ESP.getFreeHeap());
-
-	drawing_sprite.drawRect(x, y + 30, 100, 30, color2);
-	drawing_sprite.pushSprite(0, 0);
-	drawing_sprite.deleteSprite();
+	static uint32_t last_draw = 0;
+	if (millis() - last_draw < 2000)
+		return;
+	last_draw = millis();
+	tft.setCursor(0, 220);
+	tft.setTextColor(TFT_DARKGREY);
+	tft.printf("Heap:%d", ESP.getFreeHeap());
 }
 
 void error_msg(std::string message)
@@ -69,4 +39,22 @@ void error_msg(std::string message)
 	Serial.printf("[ERROR] %s\n", message.c_str());
 	tft.setTextSize(1);
 	tft.setRotation(0);
+}
+
+void draw_current_mode_screen(t_sensors *sensors, float dfa_value)
+{
+	const char *ssid_label = is_ap_mode ? json_data.ap_ssid.c_str() : json_data.sta_ssid.c_str();
+
+	if ((current_mode & MODE_MASK) == STD_MODE)
+		drawMotorsActivity(tft, pwmValues, json_data.udp_input_port, ssid_label, udp_sending, osc_sending);
+	else if ((current_mode & MODE_MASK) == MIDI_MODE)
+		drawMidiActivity(tft, pwmValues, toneValues, json_data.udp_input_port, ssid_label, udp_sending, osc_sending);
+	else if ((current_mode & MODE_MASK) == SENSORS_MODE)
+		drawSensorsActivity(tft, *sensors, oscAddress, udp_sending, osc_sending);
+	else if ((current_mode & MODE_MASK) == DFA_MODE)
+		drawAlpha(tft, dfa_value, udp_sending, osc_sending);
+	else if ((current_mode & MODE_MASK) == RUNE_MODE)
+		drawRunes(tft, dfa_value, udp_sending, osc_sending);
+	else if ((current_mode & MODE_MASK) == AP_MODE)
+		drawNetworkActivity(udp_sending, osc_sending);
 }

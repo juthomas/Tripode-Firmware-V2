@@ -1,19 +1,29 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { GlitchedButton } from "../GlitchedButton";
 import { GlitchedInput } from "../GlitchedInput";
 
 interface GlitchedFormProps {
   label?: string;
   placeholder?: string;
-  value?:string;
+  value?: string;
+  onSubmit?: (value: string) => void;
 }
 
-export const GlitchedForm = ({ label = 'default', placeholder=label, value }: GlitchedFormProps): JSX.Element => {
+export const GlitchedForm = ({
+  label = "default",
+  placeholder = label,
+  value,
+  onSubmit,
+}: GlitchedFormProps): JSX.Element => {
   const [inputState, setInputState] = useState(value || "");
+
+  useEffect(() => {
+    if (value !== undefined) setInputState(value);
+  }, [value]);
 
   const submitFunction = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("[DEBUG] Submit event :", inputState);
+    onSubmit?.(inputState);
   };
 
   return (
