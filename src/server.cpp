@@ -10,21 +10,21 @@ void send_json_to_client(AsyncWebSocketClient *client, uint8_t *data)
 
     Serial.printf("Json for client : %s\n", serialize_json_data().c_str());
     client->text(serialize_json_data().c_str());
-    update_spiffs();
+    update_spiffs();//On receive plutot???
 }
+
 
 void parse_json_from_client(uint8_t *data)
 {
     StaticJsonDocument<JSON_SIZE> doc;
 
-    DeserializationError error = deserializeJson(doc, data);
+    DeserializationError error = deserializeJson(doc, data, JSON_SIZE);
     if (error)
     {
-        error_msg(error.c_str());
+        Serial.printf("[ERROR] %s\n", error.c_str());
         return;
     }
-
-    JsonObject documentRoot = doc.as<JsonObject>();
+    JsonObject documentRoot = doc["settings"].as<JsonObject>();
 
     if (doc.containsKey("signals"))
     {
@@ -53,6 +53,7 @@ void parse_json_from_client(uint8_t *data)
             if (strcmp(json_data_parser[i].name.c_str(), keyValue.key().c_str()) == 0)
             {
                 Serial.printf("--Value to store : %s\n", (std::string)patch::to_string((const char *)keyValue.value()).c_str());
+                // Serial.printf("--Value to store : %s\n", (const char *)keyValue.value());
                 switch (json_data_parser[i].type)
                 {
                 case TYPE_IP:
@@ -63,12 +64,14 @@ void parse_json_from_client(uint8_t *data)
                                           get_octet((const char *)keyValue.value(), 2),
                                           get_octet((const char *)keyValue.value(), 3),
                                           get_octet((const char *)keyValue.value(), 4));
+                    Serial.printf("~~IP Stored : %s\n",(*tmp_addr).toString());
                 }
                 break;
                 case TYPE_INTEGER:
                 {
                     uint32_t *tmp_addr = (uint32_t *)((uint32_t)&json_data + json_data_parser[i].offset);
                     *tmp_addr = (const uint32_t)keyValue.value();
+                    Serial.printf("~~NUMBER Stored : %d\n", *tmp_addr);
                 }
                 break;
                 case TYPE_STRING:
@@ -76,6 +79,7 @@ void parse_json_from_client(uint8_t *data)
                 {
                     std::string *tmp_addr = (std::string *)((uint32_t)&json_data + json_data_parser[i].offset);
                     *tmp_addr = (std::string)patch::to_string((const char *)keyValue.value());
+                    Serial.printf("~~STRING Stored : %s\n", (*tmp_addr).c_str());
                 }
                 break;
                 }

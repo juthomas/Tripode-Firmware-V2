@@ -8,7 +8,7 @@
     "build": "tsc && vite build && pnpm run build:clean",
     "build:clean": "cd dist && mv assets/*.js index.js && mv assets/*.css index.css && rm -r assets && sh ../edit_html.sh index.html",
     "esp": "pnpm run build && pnpm run esp:data",
-    "esp:data": "cd dist && mv index.html ../../data/index.html && mv index.js ../../data/index.js && mv index.css ../../data/index.css",
+    "esp:data": "cd dist && cp * ../../data/",
     "preview": "vite preview"
   },
   "dependencies": {

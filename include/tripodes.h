@@ -89,8 +89,24 @@ void IRAM_ATTR button_loop();
 void IRAM_ATTR left_btn_handler(Button2 &btn);
 void IRAM_ATTR right_btn_handler(Button2 &btn);
 
+
+/* Modes */
+enum e_current_modes
+{
+	MODE_NONE = 0b000000,
+	MODE_STA = 0b010000,
+	MODE_AP = 0b100000
+};
+
 /* Pages */
+enum e_current_page
+{
+	PAGE_HOME = 0b0000,
+	PAGE_AP = 0b0000,
+};
+
 void display_home_page();
+void display_ram_usage();
 void error_msg(std::string message);
 
 /* Data */
@@ -113,9 +129,14 @@ namespace patch
 
 /* Definition of global variables */
 #ifdef SET_GLOBAL_VAR
+/* Pages */
+uint16_t current_mode = 0;
+/* Data */
 std::vector<t_signal_data> signal_data;
 t_json_data json_data;
+/* Screen */
 TFT_eSPI tft = TFT_eSPI(); // Invoke custom library
+/* Sensors */
 L3G gyro;
 /* Buttons */
 Button2 left_btn(LEFT_BTN);
@@ -127,6 +148,7 @@ AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 /* Simple use of global variables */
 #else
+extern uint16_t current_mode;
 extern std::vector<t_signal_data> signal_data;
 extern t_json_data json_data;
 extern Button2 left_btn;
