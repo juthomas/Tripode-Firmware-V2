@@ -47,6 +47,12 @@ void parse_json_from_client(uint8_t *data)
 					*tmp_addr = (const uint32_t)keyValue.value();
 				}
 				break;
+				case TYPE_SIGNED:
+				{
+					int32_t *tmp_addr = (int32_t *)((uint32_t)&json_data + json_data_parser[i].offset);
+					*tmp_addr = keyValue.value().as<int32_t>();
+				}
+				break;
 				case TYPE_STRING:
 				default:
 				{
@@ -85,6 +91,12 @@ void parse_json_from_client(uint8_t *data)
 					*tmp_addr = (const uint32_t)keyValue.value();
 				}
 				break;
+				case TYPE_SIGNED:
+				{
+					int32_t *tmp_addr = (int32_t *)((uint32_t)&json_data + json_data_parser[i].offset);
+					*tmp_addr = keyValue.value().as<int32_t>();
+				}
+				break;
 				case TYPE_STRING:
 				default:
 				{
@@ -103,8 +115,8 @@ void parse_json_from_client(uint8_t *data)
 
 static void send_json_to_client(AsyncWebSocketClient *client)
 {
-	client->text(serialize_json_data().c_str());
-	update_spiffs();
+	bool saved = update_spiffs();
+	client->text(serialize_json_data(true, saved).c_str());
 }
 
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)

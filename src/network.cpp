@@ -12,8 +12,35 @@ const String localIPURL = "http://4.3.2.1";
 
 static bool portalDismissed = false;
 
-static const char *CAPTIVE_SUCCESS_HTML =
-	"<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>";
+static const char *CAPTIVE_SUCCESS_HTML = R"html(<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tripode — Connecté</title>
+<style>
+*{box-sizing:border-box;margin:0}
+body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px 16px;background:#0a0a0a;color:#f0f0f0;font-family:system-ui,-apple-system,sans-serif}
+.card{max-width:320px;width:100%;padding:24px 20px;text-align:center;border:1px solid rgba(255,60,60,.4);background:rgba(20,20,20,.95);border-radius:8px}
+h1{font-size:1.5rem;font-weight:700;letter-spacing:.12em;color:#ff4444;margin-bottom:4px}
+.icon{width:56px;height:56px;margin:16px auto;line-height:56px;border-radius:50%;border:2px solid #44ff88;color:#44ff88;font-size:1.75rem;font-weight:700}
+.lead{font-size:.95rem;color:#fff;font-weight:600;margin-bottom:10px}
+p{font-size:.875rem;color:#aaa;line-height:1.5;margin-bottom:8px}
+.hint{margin-top:16px;padding:10px 12px;background:#111;border:1px solid #333;border-radius:4px;font-size:.75rem;color:#888;line-height:1.45}
+a{color:#ff4444;text-decoration:none;font-weight:600}
+a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>TRIPODE</h1>
+<div class="icon">&#10003;</div>
+<p class="lead">Configuration terminée</p>
+<p>Le portail captif est fermé. Vous pouvez fermer cette page et retrouver votre connexion internet habituelle.</p>
+<p class="hint">Pour reconfigurer le tripode, reconnectez-vous à son WiFi puis ouvrez <a href="http://4.3.2.1/config">4.3.2.1/config</a>.</p>
+</div>
+</body>
+</html>)html";
 
 static void sendCaptiveProbeResponse(AsyncWebServerRequest *request)
 {

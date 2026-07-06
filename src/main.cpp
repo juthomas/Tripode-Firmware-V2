@@ -83,13 +83,8 @@ void loop()
 	if (!i2s_on)
 		update_sensors(&sensors);
 
-	float dfa_value = updateDFA(sensors);
-
-	if (osc_sending)
-		send_sensor_osc(dfa_value, &sensors);
-
-	execute_signals(dfa_value, &sensors);
-	draw_current_mode_screen(&sensors, dfa_value);
+	execute_signals(&sensors);
+	draw_current_mode_screen(&sensors);
 
 	delay(25);
 }

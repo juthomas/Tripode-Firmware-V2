@@ -35,8 +35,6 @@
 #define VREF 1100
 #define EEPROM_SIZE 512
 
-#define SCALE_DFA 1
-#define SCALE_DFA_TRESHOLD 3
 #define UDP_DRAWING 1
 #define UPD_MESSAGE_RATE 1
 #define UPD_DRAW_RATE 300
@@ -48,7 +46,6 @@ enum e_wifi_modes
 	STA_MASK = 0b00010,
 	STD_MODE = 0b00100,
 	SENSORS_MODE = 0b01000,
-	DFA_MODE = 0b01100,
 	AP_MODE = 0b10000,
 	RUNE_MODE = 0b10100,
 	MIDI_MODE = 0b11000,
@@ -77,6 +74,12 @@ typedef struct s_json_data
 	int32_t fractal_state_pos_y;
 	int32_t glyph_pos_x;
 	int32_t glyph_pos_y;
+	int32_t gyro_norm_min;
+	int32_t gyro_norm_max;
+	int32_t accel_norm_min;
+	int32_t accel_norm_max;
+	int32_t mag_norm_min;
+	int32_t mag_norm_max;
 } t_json_data;
 
 enum e_json_data_types
@@ -84,6 +87,7 @@ enum e_json_data_types
 	TYPE_IP,
 	TYPE_STRING,
 	TYPE_INTEGER,
+	TYPE_SIGNED,
 };
 
 typedef struct s_json_data_parser
@@ -111,7 +115,8 @@ static const std::string json_data_parser_patch[] = {
 	"upd_target_ip", "upd_target_port", "upd_input_port",
 	"osc_target_ip", "osc_target_port",
 	"sta_ssid", "sta_pswd", "ap_ssid", "ap_pswd", "tripode_id",
-	"fractal_state_pos_x", "fractal_state_pos_y", "glyph_pos_x", "glyph_pos_y"};
+	"fractal_state_pos_x", "fractal_state_pos_y", "glyph_pos_x", "glyph_pos_y",
+	"gyro_norm_min", "gyro_norm_max", "accel_norm_min", "accel_norm_max", "mag_norm_min", "mag_norm_max"};
 
 static const t_json_data_parser json_data_parser[] = {
 	{.offset = offsetof(t_json_data, udp_target_ip), .name = "upd_target_ip", .type = TYPE_STRING},
@@ -127,7 +132,13 @@ static const t_json_data_parser json_data_parser[] = {
 	{.offset = offsetof(t_json_data, fractal_state_pos_x), .name = "fractal_state_pos_x", .type = TYPE_INTEGER},
 	{.offset = offsetof(t_json_data, fractal_state_pos_y), .name = "fractal_state_pos_y", .type = TYPE_INTEGER},
 	{.offset = offsetof(t_json_data, glyph_pos_x), .name = "glyph_pos_x", .type = TYPE_INTEGER},
-	{.offset = offsetof(t_json_data, glyph_pos_y), .name = "glyph_pos_y", .type = TYPE_INTEGER}};
+	{.offset = offsetof(t_json_data, glyph_pos_y), .name = "glyph_pos_y", .type = TYPE_INTEGER},
+	{.offset = offsetof(t_json_data, gyro_norm_min), .name = "gyro_norm_min", .type = TYPE_SIGNED},
+	{.offset = offsetof(t_json_data, gyro_norm_max), .name = "gyro_norm_max", .type = TYPE_SIGNED},
+	{.offset = offsetof(t_json_data, accel_norm_min), .name = "accel_norm_min", .type = TYPE_SIGNED},
+	{.offset = offsetof(t_json_data, accel_norm_max), .name = "accel_norm_max", .type = TYPE_SIGNED},
+	{.offset = offsetof(t_json_data, mag_norm_min), .name = "mag_norm_min", .type = TYPE_SIGNED},
+	{.offset = offsetof(t_json_data, mag_norm_max), .name = "mag_norm_max", .type = TYPE_SIGNED}};
 
 namespace patch
 {
@@ -146,8 +157,8 @@ void dump_json_to_serial();
 uint8_t get_octet(const char *str, uint8_t n);
 void write_default_config();
 void load_spiffs();
-std::string serialize_json_data();
-void update_spiffs();
+std::string serialize_json_data(bool include_meta = false, bool meta_saved = true);
+bool update_spiffs();
 void parse_json_from_client(uint8_t *data);
 void poll_serial_config();
 
@@ -174,23 +185,21 @@ void IRAM_ATTR right_btn_handler(Button2 &btn);
 void display_home_page();
 void display_ram_usage();
 void error_msg(std::string message);
-void draw_current_mode_screen(t_sensors *sensors, float dfa_value);
+void draw_current_mode_screen(t_sensors *sensors);
 
 /* Sensors */
 void init_sensors();
 void update_sensors(t_sensors *sensors);
-float updateDFA(t_sensors sensors);
+double fmap(double x, double in_min, double in_max, double out_min, double out_max);
 
 /* OSC / UDP */
 void sendOscFloatMessage(const char *oscPrefix, float oscMessage, const IPAddress ipOut, const uint32_t portOut);
-void send_sensor_osc(float dfa_value, t_sensors *sensors);
 void sendUpdMessage(const char *buffer, const IPAddress ipOut, const uint32_t portOut);
-void sendUdpXYZ(t_float3 gyro, const IPAddress ipOut, const uint32_t portOut);
-void sendUdpFractalState(float alpha, const IPAddress ipOut, const uint32_t portOut);
 void sendOrcaLine(const char *line, uint16_t x, uint16_t y, const IPAddress ipOut, const uint32_t portOut);
 void look_for_udp_message();
-void execute_signals(float dfa_value, t_sensors *sensors);
-std::string expand_signal_placeholders(const std::string &value, float dfa_value, t_sensors *sensors);
+void execute_signals(t_sensors *sensors);
+std::string expand_signal_placeholders(const std::string &value, t_sensors *sensors);
+void execute_osc_signal(const std::string &value, t_sensors *sensors, const IPAddress ipOut, const uint32_t portOut);
 
 /* Motors / MIDI */
 void init_motors();
@@ -199,10 +208,9 @@ void motors_handle_udp_command(const String &packet);
 void motors_trigger_note(int pin, int velocity, int tonality, int duration);
 void play_midi_notes();
 
-/* DFA */
-float dfa(float *x, size_t size_x, float min_scale, float max_scale, float scale_dens);
-float mean(float *tab, size_t tab_size);
-double fmap(double x, double in_min, double in_max, double out_min, double out_max);
+/* Encoding */
+int convertCharToBase35(char c);
+char convertBase35ToChar(int nb);
 
 /* UI */
 void drawUpdSendingActivity(TFT_eSprite *sprite, bool udp_activity, bool osc_activity);
@@ -211,7 +219,6 @@ void drawCursors(TFT_eSprite *sprite, int x, int y, int w, int h, int min, int m
 void drawMidiActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t toneValues[3], int32_t localUdpPort, const char *ssid, bool is_upd_sending, bool is_osc_sending);
 void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort, const char *ssid, bool is_upd_sending, bool is_osc_sending);
 void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bool is_upd_sending, bool is_osc_sending);
-void drawAlpha(TFT_eSPI tft, float alpha, bool is_upd_sending, bool is_osc_sending);
 void drawRunes(TFT_eSPI tft, float alpha, bool is_upd_sending, bool is_osc_sending);
 void drawNetworkActivity(bool is_udp_sending, bool is_osc_sending);
 

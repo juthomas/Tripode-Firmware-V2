@@ -2,17 +2,6 @@
 
 static char incomingPacket[255];
 
-static int convertCharToBase35(char c)
-{
-	if (c >= 'A' && c <= 'Z')
-		return (c - 'A' + 10);
-	if (c >= 'a' && c <= 'z')
-		return (c - 'a' + 10);
-	if (c >= '0' && c <= '9')
-		return (c - '0');
-	return 0;
-}
-
 static int convertOrcaMidiToHalfTones(char c)
 {
 	switch (c)

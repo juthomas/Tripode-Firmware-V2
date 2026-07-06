@@ -16,9 +16,20 @@ void write_default_config()
 	json_data.fractal_state_pos_y = 10;
 	json_data.glyph_pos_x = 48;
 	json_data.glyph_pos_y = 6;
+	json_data.gyro_norm_min = 0;
+	json_data.gyro_norm_max = 35;
+	json_data.accel_norm_min = 0;
+	json_data.accel_norm_max = 35;
+	json_data.mag_norm_min = 0;
+	json_data.mag_norm_max = 35;
 
 	signal_data.clear();
 	signal_data.push_back({.value = "write:;#0D300I255P1;12;12", .type = "udp"});
+	signal_data.push_back({.value = "select:0;0", .type = "udp"});
+	signal_data.push_back({.value = "write:1V{G:X}2V{G:Y}3V{G:Z};0;0", .type = "udp"});
+	signal_data.push_back({.value = "/gyroscope_x:{G:X}", .type = "osc"});
+	signal_data.push_back({.value = "/gyroscope_y:{G:Y}", .type = "osc"});
+	signal_data.push_back({.value = "/gyroscope_z:{G:Z}", .type = "osc"});
 	update_spiffs();
 	Serial.println("[SPIFFS] Created default /data.json");
 }
@@ -83,6 +94,12 @@ static void apply_json_settings(JsonObject settings)
 			*tmp_addr = settings[json_data_parser_patch[i].c_str()];
 		}
 		break;
+		case TYPE_SIGNED:
+		{
+			int32_t *tmp_addr = (int32_t *)((uint32_t)&json_data + json_data_parser[i].offset);
+			*tmp_addr = settings[json_data_parser_patch[i].c_str()].as<int32_t>();
+		}
+		break;
 		case TYPE_STRING:
 		default:
 		{
@@ -142,13 +159,22 @@ void load_spiffs()
 		}
 	}
 
+	if (json_data.gyro_norm_min == 0 && json_data.gyro_norm_max == 0 &&
+		json_data.accel_norm_min == 0 && json_data.accel_norm_max == 0 &&
+		json_data.mag_norm_min == 0 && json_data.mag_norm_max == 0)
+	{
+		json_data.gyro_norm_max = 35;
+		json_data.accel_norm_max = 35;
+		json_data.mag_norm_max = 35;
+	}
+
 	free(buff);
 	dump_json_to_serial();
 	invalidate_target_cache();
 	refresh_target_cache();
 }
 
-std::string serialize_json_data()
+std::string serialize_json_data(bool include_meta, bool meta_saved)
 {
 	static StaticJsonDocument<JSON_SIZE> doc;
 	doc.clear();
@@ -163,6 +189,9 @@ std::string serialize_json_data()
 		case TYPE_INTEGER:
 			doc["settings"][json_data_parser_patch[i]] = *(uint32_t *)((uint32_t)&json_data + json_data_parser[i].offset);
 			break;
+		case TYPE_SIGNED:
+			doc["settings"][json_data_parser_patch[i]] = *(int32_t *)((uint32_t)&json_data + json_data_parser[i].offset);
+			break;
 		case TYPE_STRING:
 		default:
 			doc["settings"][json_data_parser_patch[i]] = *(std::string *)((uint32_t)&json_data + json_data_parser[i].offset);
@@ -176,14 +205,32 @@ std::string serialize_json_data()
 		doc["signals"][i]["type"] = signal_data[i].type.c_str();
 	}
 
+	if (include_meta)
+		doc["meta"]["saved"] = meta_saved;
+
 	std::string buff;
 	serializeJsonPretty(doc, buff);
 	return buff;
 }
 
-void update_spiffs()
+bool update_spiffs()
 {
 	fs::File file = SPIFFS.open("/data.json", "w");
-	file.print(serialize_json_data().c_str());
+	if (!file)
+	{
+		Serial.println("[SPIFFS] Failed to open /data.json for writing");
+		return false;
+	}
+
+	std::string content = serialize_json_data(false, false);
+	size_t written = file.print(content.c_str());
 	file.close();
+
+	if (written != content.length())
+	{
+		Serial.println("[SPIFFS] Write to /data.json incomplete");
+		return false;
+	}
+
+	return true;
 }

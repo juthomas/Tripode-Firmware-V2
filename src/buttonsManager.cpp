@@ -7,8 +7,6 @@ static void cycle_display_mode()
 		if ((current_mode & MODE_MASK) == STD_MODE)
 			current_mode = SENSORS_MODE | STA_MASK;
 		else if ((current_mode & MODE_MASK) == SENSORS_MODE)
-			current_mode = DFA_MODE | STA_MASK;
-		else if ((current_mode & MODE_MASK) == DFA_MODE)
 			current_mode = RUNE_MODE | STA_MASK;
 		else if ((current_mode & MODE_MASK) == RUNE_MODE)
 			current_mode = MIDI_MODE | STA_MASK;
@@ -20,8 +18,6 @@ static void cycle_display_mode()
 		if ((current_mode & MODE_MASK) == STD_MODE)
 			current_mode = SENSORS_MODE | AP_MASK;
 		else if ((current_mode & MODE_MASK) == SENSORS_MODE)
-			current_mode = DFA_MODE | AP_MASK;
-		else if ((current_mode & MODE_MASK) == DFA_MODE)
 			current_mode = RUNE_MODE | AP_MASK;
 		else if ((current_mode & MODE_MASK) == RUNE_MODE)
 			current_mode = MIDI_MODE | AP_MASK;

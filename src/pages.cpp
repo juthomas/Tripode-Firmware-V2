@@ -41,7 +41,15 @@ void error_msg(std::string message)
 	tft.setRotation(0);
 }
 
-void draw_current_mode_screen(t_sensors *sensors, float dfa_value)
+static float gyro_visual_metric(t_sensors *sensors)
+{
+	float gyro_norm = sqrtf(sensors->gyro.x * sensors->gyro.x +
+							sensors->gyro.y * sensors->gyro.y +
+							sensors->gyro.z * sensors->gyro.z);
+	return (float)fmap(gyro_norm, 0, 37000, 0, 1.5);
+}
+
+void draw_current_mode_screen(t_sensors *sensors)
 {
 	const char *ssid_label = is_ap_mode ? json_data.ap_ssid.c_str() : json_data.sta_ssid.c_str();
 
@@ -51,10 +59,8 @@ void draw_current_mode_screen(t_sensors *sensors, float dfa_value)
 		drawMidiActivity(tft, pwmValues, toneValues, json_data.udp_input_port, ssid_label, udp_sending, osc_sending);
 	else if ((current_mode & MODE_MASK) == SENSORS_MODE)
 		drawSensorsActivity(tft, *sensors, oscAddress, udp_sending, osc_sending);
-	else if ((current_mode & MODE_MASK) == DFA_MODE)
-		drawAlpha(tft, dfa_value, udp_sending, osc_sending);
 	else if ((current_mode & MODE_MASK) == RUNE_MODE)
-		drawRunes(tft, dfa_value, udp_sending, osc_sending);
+		drawRunes(tft, gyro_visual_metric(sensors), udp_sending, osc_sending);
 	else if ((current_mode & MODE_MASK) == AP_MODE)
 		drawNetworkActivity(udp_sending, osc_sending);
 }

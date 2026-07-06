@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { GlitchedBackground } from "../components/GlitchedBackground";
 import { GlitchedTitle } from "../components/GlitchedTitle";
 import "./config.css";
@@ -23,12 +23,27 @@ interface Settings {
   fractal_state_pos_y?: number;
   glyph_pos_x?: number;
   glyph_pos_y?: number;
+  gyro_norm_min?: number;
+  gyro_norm_max?: number;
+  accel_norm_min?: number;
+  accel_norm_max?: number;
+  mag_norm_min?: number;
+  mag_norm_max?: number;
 }
 
 interface DataInterface {
   settings: Settings;
   signals: Signal[];
+  meta?: { saved?: boolean };
 }
+
+type SaveState = "idle" | "pending" | "saved" | "error";
+type WsStatus = "connecting" | "open" | "closed" | "error";
+type SignalsSaveState = "idle" | "pending" | "saved" | "error";
+
+const SAVE_ACK_MS = 5000;
+const SAVED_FLASH_MS = 2500;
+const TOAST_MS = 3000;
 
 const defaultData: DataInterface = {
   settings: {
@@ -46,6 +61,12 @@ const defaultData: DataInterface = {
     fractal_state_pos_y: 10,
     glyph_pos_x: 48,
     glyph_pos_y: 6,
+    gyro_norm_min: 0,
+    gyro_norm_max: 35,
+    accel_norm_min: 0,
+    accel_norm_max: 35,
+    mag_norm_min: 0,
+    mag_norm_max: 35,
   },
   signals: [{ value: "write:;#0D300I255P1;12;12", type: "udp" }],
 };
@@ -65,6 +86,12 @@ const fieldLabels: Record<keyof Settings, string> = {
   fractal_state_pos_y: "Fractal pos Y",
   glyph_pos_x: "Glyph pos X",
   glyph_pos_y: "Glyph pos Y",
+  gyro_norm_min: "Gyro norm min",
+  gyro_norm_max: "Gyro norm max",
+  accel_norm_min: "Accel norm min",
+  accel_norm_max: "Accel norm max",
+  mag_norm_min: "Magneto norm min",
+  mag_norm_max: "Magneto norm max",
 };
 
 const fieldPlaceholders: Partial<Record<keyof Settings, string>> = {
@@ -97,22 +124,51 @@ const settingSections: { title: string; keys: (keyof Settings)[] }[] = [
     ],
   },
   {
+    title: "Normalisation capteurs",
+    keys: [
+      "gyro_norm_min",
+      "gyro_norm_max",
+      "accel_norm_min",
+      "accel_norm_max",
+      "mag_norm_min",
+      "mag_norm_max",
+    ],
+  },
+  {
     title: "Identité",
     keys: ["tripode_id"],
   },
 ];
+
+function valuesMatch(
+  a: string | number | undefined,
+  b: string | number
+): boolean {
+  if (a === undefined) return false;
+  if (typeof b === "number") return Number(a) === b;
+  return String(a) === String(b);
+}
+
+function signalsMatch(a: Signal[], b: Signal[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every(
+    (sig, i) => sig.value === b[i].value && sig.type === b[i].type
+  );
+}
 
 function SettingRow({
   label,
   value,
   placeholder,
   type = "text",
+  saveState,
   onSubmit,
 }: {
   label: string;
   value: string | number;
   placeholder?: string;
   type?: "text" | "number";
+  saveState: SaveState;
   onSubmit: (v: string | number) => void;
 }) {
   const [draft, setDraft] = useState(String(value));
@@ -125,6 +181,22 @@ function SettingRow({
     onSubmit(type === "number" ? Number(draft) : draft);
   };
 
+  const btnClass =
+    saveState === "saved"
+      ? "settings-btn settings-btn-saved"
+      : saveState === "error"
+        ? "settings-btn settings-btn-error"
+        : "settings-btn";
+
+  const btnLabel =
+    saveState === "pending"
+      ? "…"
+      : saveState === "saved"
+        ? "✓"
+        : saveState === "error"
+          ? "!"
+          : "Enregistrer";
+
   return (
     <>
       <label className="settings-label">{label}</label>
@@ -133,76 +205,248 @@ function SettingRow({
         type={type}
         value={draft}
         placeholder={placeholder}
+        disabled={saveState === "pending"}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && submit()}
       />
-      <button type="button" className="settings-btn" onClick={submit}>
-        Update
+      <button
+        type="button"
+        className={btnClass}
+        onClick={submit}
+        disabled={saveState === "pending"}
+      >
+        {btnLabel}
       </button>
     </>
   );
 }
 
 export const ConfigApp = (): JSX.Element => {
-  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
+  const pendingSettingsRef = useRef<
+    Record<string, { value: string | number; timeoutId: number }>
+  >({});
+  const pendingSignalsRef = useRef<{
+    signals: Signal[];
+    timeoutId: number;
+  } | null>(null);
+  const savedTimersRef = useRef<Record<string, number>>({});
+
+  const [wsStatus, setWsStatus] = useState<WsStatus>("connecting");
   const [data, setData] = useState<DataInterface>(defaultData);
   const [commands, setCommands] = useState<Signal[]>(defaultData.signals);
+  const [fieldSaveState, setFieldSaveState] = useState<
+    Record<string, SaveState>
+  >({});
+  const [signalsSaveState, setSignalsSaveState] =
+    useState<SignalsSaveState>("idle");
+  const [toast, setToast] = useState<{
+    message: string;
+    kind: "success" | "error";
+  } | null>(null);
 
-  useEffect(() => {
+  const showToast = useCallback(
+    (message: string, kind: "success" | "error") => {
+      setToast({ message, kind });
+      window.setTimeout(() => setToast(null), TOAST_MS);
+    },
+    []
+  );
+
+  const markFieldSaved = useCallback(
+    (key: string, label: string) => {
+      setFieldSaveState((prev) => ({ ...prev, [key]: "saved" }));
+      showToast(`${label} enregistré`, "success");
+      if (savedTimersRef.current[key])
+        window.clearTimeout(savedTimersRef.current[key]);
+      savedTimersRef.current[key] = window.setTimeout(() => {
+        setFieldSaveState((prev) => ({ ...prev, [key]: "idle" }));
+      }, SAVED_FLASH_MS);
+    },
+    [showToast]
+  );
+
+  const markFieldError = useCallback(
+    (key: string) => {
+      setFieldSaveState((prev) => ({ ...prev, [key]: "error" }));
+    },
+    []
+  );
+
+  const handleWsMessage = useCallback(
+    (parsed: DataInterface) => {
+      if (parsed.settings) setData(parsed);
+      if (parsed.signals) setCommands(parsed.signals);
+
+      const pendingSettings = pendingSettingsRef.current;
+      for (const key of Object.keys(pendingSettings)) {
+        const pending = pendingSettings[key];
+        const deviceValue = parsed.settings?.[key as keyof Settings];
+        if (
+          parsed.meta?.saved === true &&
+          valuesMatch(deviceValue, pending.value)
+        ) {
+          window.clearTimeout(pending.timeoutId);
+          delete pendingSettingsRef.current[key];
+          markFieldSaved(key, fieldLabels[key as keyof Settings] ?? key);
+        }
+      }
+
+      const pendingSignals = pendingSignalsRef.current;
+      if (
+        pendingSignals &&
+        parsed.signals &&
+        parsed.meta?.saved === true &&
+        signalsMatch(parsed.signals, pendingSignals.signals)
+      ) {
+        window.clearTimeout(pendingSignals.timeoutId);
+        pendingSignalsRef.current = null;
+        setSignalsSaveState("saved");
+        showToast("Signaux enregistrés", "success");
+        window.setTimeout(() => setSignalsSaveState("idle"), SAVED_FLASH_MS);
+      }
+    },
+    [markFieldSaved, showToast]
+  );
+
+  const connectWs = useCallback(() => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) return;
+
+    setWsStatus("connecting");
     const host = window.location.hostname || "4.3.2.1";
     const newSocket = new WebSocket(`ws://${host}/ws`);
+    socketRef.current = newSocket;
 
     newSocket.addEventListener("open", () => {
-      console.log("WebSocket connected");
+      setWsStatus("open");
     });
 
     newSocket.addEventListener("message", (event) => {
       try {
-        const parsed = JSON.parse(event.data) as DataInterface;
-        if (parsed.settings) setData(parsed);
-        if (parsed.signals) setCommands(parsed.signals);
+        const parsed = JSON.parse(event.data as string) as DataInterface;
+        handleWsMessage(parsed);
       } catch (e) {
         console.error("Invalid WS payload", e);
       }
     });
 
     newSocket.addEventListener("error", () => {
-      window.location.reload();
+      setWsStatus("error");
     });
 
-    setSocket(newSocket);
-    return () => newSocket.close();
+    newSocket.addEventListener("close", () => {
+      setWsStatus("closed");
+      socketRef.current = null;
+      window.setTimeout(() => connectWs(), 3000);
+    });
+  }, [handleWsMessage]);
+
+  useEffect(() => {
+    connectWs();
+    return () => {
+      socketRef.current?.close();
+      socketRef.current = null;
+      Object.values(pendingSettingsRef.current).forEach((p) =>
+        window.clearTimeout(p.timeoutId)
+      );
+      if (pendingSignalsRef.current)
+        window.clearTimeout(pendingSignalsRef.current.timeoutId);
+      Object.values(savedTimersRef.current).forEach((id) =>
+        window.clearTimeout(id)
+      );
+    };
+  }, [connectWs]);
+
+  const sendJson = useCallback((payload: object): boolean => {
+    const ws = socketRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(payload));
+      return true;
+    }
+    return false;
   }, []);
 
-  const sendJson = useCallback(
-    (payload: object) => {
-      if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify(payload));
-      }
-    },
-    [socket]
-  );
-
   const updateSetting = (key: keyof Settings, value: string | number) => {
-    const next = {
-      ...data,
-      settings: { ...data.settings, [key]: value },
-    };
-    setData(next);
-    sendJson({ settings: { [key]: value } });
+    if (!sendJson({ settings: { [key]: value } })) {
+      markFieldError(key);
+      showToast("Non connecté — impossible d'enregistrer", "error");
+      return;
+    }
+
+    setFieldSaveState((prev) => ({ ...prev, [key]: "pending" }));
+
+    if (pendingSettingsRef.current[key])
+      window.clearTimeout(pendingSettingsRef.current[key].timeoutId);
+
+    const timeoutId = window.setTimeout(() => {
+      delete pendingSettingsRef.current[key];
+      markFieldError(key);
+      showToast(`Échec : ${fieldLabels[key]}`, "error");
+    }, SAVE_ACK_MS);
+
+    pendingSettingsRef.current[key] = { value, timeoutId };
   };
 
   const saveCommands = () => {
-    sendJson({ signals: commands });
+    if (!sendJson({ signals: commands })) {
+      setSignalsSaveState("error");
+      showToast("Non connecté — signaux non enregistrés", "error");
+      return;
+    }
+
+    setSignalsSaveState("pending");
+
+    if (pendingSignalsRef.current)
+      window.clearTimeout(pendingSignalsRef.current.timeoutId);
+
+    const snapshot = commands.map((c) => ({ ...c }));
+    const timeoutId = window.setTimeout(() => {
+      pendingSignalsRef.current = null;
+      setSignalsSaveState("error");
+      showToast("Échec enregistrement des signaux", "error");
+    }, SAVE_ACK_MS);
+
+    pendingSignalsRef.current = { signals: snapshot, timeoutId };
   };
 
   const addCommand = () => {
     setCommands([...commands, { value: "", type: "udp" }]);
   };
 
-  const removeCommand = () => {
-    if (commands.length > 1) setCommands(commands.slice(0, -1));
+  const removeCommand = (index: number) => {
+    if (commands.length <= 1) return;
+    setCommands(commands.filter((_, i) => i !== index));
   };
+
+  const wsBannerClass =
+    wsStatus === "open"
+      ? "config-ws-banner config-ws-banner-open"
+      : wsStatus === "connecting"
+        ? "config-ws-banner config-ws-banner-connecting"
+        : "config-ws-banner config-ws-banner-error";
+
+  const wsBannerText =
+    wsStatus === "open"
+      ? "Connecté au tripode"
+      : wsStatus === "connecting"
+        ? "Connexion au tripode…"
+        : "Déconnecté — les modifications ne seront pas enregistrées";
+
+  const signalsBtnClass =
+    signalsSaveState === "saved"
+      ? "signals-save-btn signals-save-btn-saved"
+      : signalsSaveState === "error"
+        ? "signals-save-btn signals-save-btn-error"
+        : "signals-save-btn";
+
+  const signalsBtnLabel =
+    signalsSaveState === "pending"
+      ? "Enregistrement…"
+      : signalsSaveState === "saved"
+        ? "Signaux enregistrés ✓"
+        : signalsSaveState === "error"
+          ? "Échec — réessayer"
+          : "Enregistrer les signaux";
 
   return (
     <>
@@ -214,6 +458,11 @@ export const ConfigApp = (): JSX.Element => {
             Documentation UDP/OSC
           </a>
         </div>
+
+        <div className={`${wsBannerClass} config-ws-banner-wrap`}>
+          <span>{wsBannerText}</span>
+        </div>
+
         <div className="config-layout">
           <div className="config-settings">
             {settingSections.map((section) => (
@@ -231,6 +480,7 @@ export const ConfigApp = (): JSX.Element => {
                         value={value}
                         placeholder={fieldPlaceholders[key]}
                         type={isNumber ? "number" : "text"}
+                        saveState={fieldSaveState[key] ?? "idle"}
                         onSubmit={(v) => updateSetting(key, v)}
                       />
                     );
@@ -242,12 +492,16 @@ export const ConfigApp = (): JSX.Element => {
 
           <div className="config-section">
             <h2 className="config-section-title">Signaux</h2>
+            <p className="config-hint">
+              Cliquez <strong>Enregistrer les signaux</strong> pour persister
+              les modifications.
+            </p>
             <div className="signals-panel">
               {commands.map((cmd, index) => (
                 <div key={index} className="signal-row">
                   <input
                     value={cmd.value}
-                    placeholder="commande"
+                    placeholder="write:1V{G:Y};0;0 ou TEST{G:Y:DEC}, {A}, {M:HEX:Z}"
                     onChange={(e) => {
                       const next = [...commands];
                       next[index] = { ...next[index], value: e.target.value };
@@ -268,23 +522,47 @@ export const ConfigApp = (): JSX.Element => {
                     <option value="udp">UDP</option>
                     <option value="osc">OSC</option>
                   </select>
+                  <button
+                    type="button"
+                    className="signal-remove-btn"
+                    onClick={() => removeCommand(index)}
+                    disabled={commands.length <= 1}
+                    aria-label="Supprimer ce signal"
+                  >
+                    -
+                  </button>
                 </div>
               ))}
               <div className="signals-actions">
                 <button type="button" onClick={addCommand}>
                   +
                 </button>
-                <button type="button" onClick={removeCommand}>
-                  -
-                </button>
-                <button type="button" onClick={saveCommands}>
-                  Save commands
+                <button
+                  type="button"
+                  className={signalsBtnClass}
+                  onClick={saveCommands}
+                  disabled={signalsSaveState === "pending"}
+                >
+                  {signalsBtnLabel}
                 </button>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {toast && (
+        <div
+          className={`config-toast ${
+            toast.kind === "success"
+              ? "config-toast-success"
+              : "config-toast-error"
+          }`}
+          role="status"
+        >
+          {toast.message}
+        </div>
+      )}
     </>
   );
 };

@@ -14,12 +14,11 @@ export const DocPage = (): JSX.Element => {
         <section className="doc-section">
           <h2>Boucle principale</h2>
           <p>
-            À chaque cycle (~25 ms), le firmware lit les capteurs, calcule la
-            valeur DFA, envoie éventuellement l&apos;OSC des capteurs, exécute
-            les signaux configurés, puis met à jour l&apos;écran.
+            À chaque cycle (~25 ms), le firmware lit les capteurs, exécute les
+            signaux configurés, puis met à jour l&apos;écran.
           </p>
           <p>
-            <code>capteurs → DFA → OSC (si actif) → signals[] → affichage TFT</code>
+            <code>capteurs → signals[] → UDP / OSC → affichage TFT</code>
           </p>
         </section>
 
@@ -27,12 +26,13 @@ export const DocPage = (): JSX.Element => {
           <h2>Signaux configurables</h2>
           <p>
             La liste <code>signals[]</code> (section Signaux de cette interface)
-            définit des messages envoyés en boucle. Chaque entrée a :
+            est la <strong>seule voie</strong> pour envoyer des valeurs capteur
+            en réseau. Chaque entrée a :
           </p>
           <ul>
             <li>
-              <code>value</code> — contenu du message (avec placeholders
-              optionnels)
+              <code>value</code> — contenu du message (avec expressions capteur{" "}
+              <code>{"{…}"}</code> pour injecter gyro / accel / magneto)
             </li>
             <li>
               <code>type</code> — <code>udp</code> ou <code>osc</code>
@@ -46,23 +46,71 @@ export const DocPage = (): JSX.Element => {
         </section>
 
         <section className="doc-section">
-          <h2>Placeholders</h2>
-          <p>
-            Dans <code>value</code>, ces tokens sont remplacés à chaque cycle
-            avant envoi :
-          </p>
+          <h2>Expressions capteur {"{…}"}</h2>
+          <p>Syntaxe commune UDP et OSC :</p>
+          <code className="doc-code-block">
+            {"{<capteur>[:<axe>][:<encodage>]}"}
+          </code>
           <ul>
             <li>
-              <code>{"{gx}"}</code>, <code>{"{gy}"}</code>, <code>{"{gz}"}</code>{" "}
-              — gyroscope (entiers)
+              <code>G</code> — gyroscope, <code>A</code> — accéléromètre,{" "}
+              <code>M</code> — magnétomètre
             </li>
             <li>
-              <code>{"{ax}"}</code>, <code>{"{ay}"}</code>, <code>{"{az}"}</code>{" "}
-              — accéléromètre (float)
+              Axe (optionnel) : <code>X</code>, <code>Y</code>, <code>Z</code> —
+              sans axe = moyenne des trois composantes
             </li>
             <li>
-              <code>{"{dfa}"}</code> — valeur DFA courante
+              Encodage UDP (optionnel) : <code>B35</code> (défaut),{" "}
+              <code>DEC</code>, <code>HEX</code>
             </li>
+            <li>
+              Séparateur interne : <code>:</code> — l&apos;ordre des sous-paramètres
+              est libre
+            </li>
+          </ul>
+          <p>Exemples UDP :</p>
+          <ul>
+            <li>
+              <code>TEST{"{G:Y:DEC}"}</code> — gyro Y, décimal normalisé
+            </li>
+            <li>
+              <code>{"{A}"}</code> — moyenne accel, 1 caractère base35
+            </li>
+            <li>
+              <code>write:1V{"{G:X}"}2V{"{G:Y}"}3V{"{G:Z}"};0;0</code> — gyro Orca
+            </li>
+          </ul>
+          <p>Exemples OSC (float normalisé, encodage texte ignoré) :</p>
+          <ul>
+            <li>
+              <code>/gyroscope_y:{"{G:Y}"}</code> → adresse{" "}
+              <code>/gyroscope_y_{"{tripode_id}"}</code> + float gyro Y
+            </li>
+            <li>
+              <code>/acc:{"{A}"}</code> → moyenne accel normalisée
+            </li>
+          </ul>
+          <p>
+            Un signal OSC sans bloc <code>{"{…}"}</code> n&apos;envoie rien.
+            Plusieurs blocs <code>{"{…}"}</code> dans un même signal OSC =
+            un message OSC par bloc.
+          </p>
+        </section>
+
+        <section className="doc-section">
+          <h2>Normalisation capteurs</h2>
+          <p>
+            La section <strong>Normalisation capteurs</strong> définit, pour
+            chaque capteur, une plage de sortie <code>min</code> / <code>max</code>.
+            La valeur brute est mappée depuis sa plage firmware fixe, puis
+            clampée avant encodage UDP ou envoi OSC float.
+          </p>
+          <p>Plages brutes firmware (entrée) :</p>
+          <ul>
+            <li>Gyro : -37000 … 37000</li>
+            <li>Accéléromètre : -40 … 40</li>
+            <li>Magnétomètre : -100 … 100</li>
           </ul>
         </section>
 
@@ -70,60 +118,27 @@ export const DocPage = (): JSX.Element => {
           <h2>UDP — protocole Orca</h2>
           <p>
             Les messages UDP sont du texte brut envoyés vers{" "}
-            <code>upd_target_ip:upd_target_port</code> (Orca ou autre cible).
+            <code>upd_target_ip:upd_target_port</code>.
           </p>
           <p>Format générique pour écrire une ligne Orca :</p>
           <code className="doc-code-block">write:&lt;ligne&gt;;&lt;x&gt;;&lt;y&gt;</code>
-          <p>Exemple par défaut (moteur / glyph) :</p>
-          <code className="doc-code-block">write:;#0D300I255P1;12;12</code>
-          <p>Messages UDP automatiques quand l&apos;envoi UDP est actif :</p>
-          <ul>
-            <li>
-              <code>select:0;0</code> puis{" "}
-              <code>write:1V…2V…3V…;0;0</code> — axes gyro mappés en base35
-              (0–9, a–z)
-            </li>
-            <li>
-              Fractal state — alpha DFA encodé en base35, position définie par{" "}
-              <code>fractal_state_pos_x/y</code>
-            </li>
-          </ul>
+          <p>Signaux par défaut inclus : glyph moteur, select, gyro Orca.</p>
         </section>
 
         <section className="doc-section">
           <h2>OSC</h2>
           <p>
-            Chaque message OSC est un float envoyé vers{" "}
+            Chaque message OSC est un float normalisé envoyé vers{" "}
             <code>osc_target_ip:osc_target_port</code>.
           </p>
           <p>
-            Adresse : <code>{"{prefix}_{tripode_id}"}</code> (ex.{" "}
-            <code>/dfa_1_1</code>).
+            Adresse : <code>{"{prefix}_{tripode_id}"}</code> où{" "}
+            <code>prefix</code> est la partie de <code>value</code> hors bloc{" "}
+            <code>{"{…}"}</code>.
           </p>
-          <p>Flux automatique si OSC actif :</p>
-          <ul>
-            <li>
-              <code>/dfa</code>, <code>/accelerometer_x/y/z</code>, norme accél
-            </li>
-            <li>
-              <code>/gyroscope_x/y/z</code>, norme gyro
-            </li>
-            <li>
-              <code>/magnetometer_x/y/z</code>
-            </li>
-          </ul>
           <p>
-            Pour un signal <code>type: osc</code>, <code>value</code> est le
-            préfixe OSC (ex. <code>/custom</code> → <code>/custom_1_1</code>).
-          </p>
-        </section>
-
-        <section className="doc-section">
-          <h2>DFA</h2>
-          <p>
-            Detrended Fluctuation Analysis — mesure la variabilité / complexité
-            du signal capteur sur plusieurs échelles. Utilisée pour le fractal
-            state Orca et le placeholder <code>{"{dfa}"}</code>.
+            Signaux OSC par défaut : <code>/gyroscope_x/y/z</code> avec{" "}
+            <code>{"{G:X/Y/Z}"}</code>.
           </p>
         </section>
 

@@ -13,12 +13,38 @@
         "fractal_state_pos_x": 0,
         "fractal_state_pos_y": 10,
         "glyph_pos_x": 48,
-        "glyph_pos_y": 6
+        "glyph_pos_y": 6,
+        "gyro_norm_min": 0,
+        "gyro_norm_max": 35,
+        "accel_norm_min": 0,
+        "accel_norm_max": 35,
+        "mag_norm_min": 0,
+        "mag_norm_max": 35
     },
     "signals": [
         {
             "value": "write:;#0D300I255P1;12;12",
             "type": "udp"
+        },
+        {
+            "value": "select:0;0",
+            "type": "udp"
+        },
+        {
+            "value": "write:1V{G:X}2V{G:Y}3V{G:Z};0;0",
+            "type": "udp"
+        },
+        {
+            "value": "/gyroscope_x:{G:X}",
+            "type": "osc"
+        },
+        {
+            "value": "/gyroscope_y:{G:Y}",
+            "type": "osc"
+        },
+        {
+            "value": "/gyroscope_z:{G:Z}",
+            "type": "osc"
         }
     ]
 }

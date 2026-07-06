@@ -115,7 +115,7 @@
 
 .signal-row {
   display: grid;
-  grid-template-columns: 1fr 72px;
+  grid-template-columns: 1fr 72px 36px;
   gap: 8px;
   align-items: center;
 }
@@ -129,6 +129,27 @@
   border: 1px solid #633;
   color: #fff;
   font-size: 0.85rem;
+}
+
+.signal-remove-btn {
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 0;
+  background: transparent;
+  border: 1px solid #f55;
+  color: #f55;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.signal-remove-btn:hover:not(:disabled) {
+  background: rgba(255, 85, 85, 0.15);
+}
+
+.signal-remove-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .signals-actions {
@@ -146,6 +167,106 @@
   font-size: 0.85rem;
 }
 
-.signals-actions button:hover {
+.signals-actions button:hover:not(:disabled) {
   background: rgba(255, 85, 85, 0.15);
+}
+
+.signals-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.config-ws-banner-wrap {
+  max-width: 960px;
+  margin: 0 auto 16px;
+}
+
+.config-ws-banner {
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.config-ws-banner-open {
+  border: 1px solid rgba(68, 255, 136, 0.4);
+  background: rgba(68, 255, 136, 0.08);
+  color: #6f6;
+}
+
+.config-ws-banner-connecting {
+  border: 1px solid rgba(255, 200, 80, 0.4);
+  background: rgba(255, 200, 80, 0.08);
+  color: #fc6;
+}
+
+.config-ws-banner-error {
+  border: 1px solid rgba(255, 85, 85, 0.5);
+  background: rgba(255, 85, 85, 0.1);
+  color: #f88;
+}
+
+.config-hint {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  color: #888;
+  line-height: 1.4;
+}
+
+.settings-btn-saved {
+  border-color: #4c8;
+  color: #4c8;
+}
+
+.settings-btn-error {
+  border-color: #f55;
+  color: #f55;
+  background: rgba(255, 85, 85, 0.2);
+}
+
+.settings-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.signals-save-btn {
+  flex: 1;
+}
+
+.signals-save-btn-saved {
+  border-color: #4c8 !important;
+  color: #4c8 !important;
+}
+
+.signals-save-btn-error {
+  border-color: #f55 !important;
+  color: #f55 !important;
+  background: rgba(255, 85, 85, 0.15) !important;
+}
+
+.config-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  max-width: min(90vw, 400px);
+  text-align: center;
+}
+
+.config-toast-success {
+  background: rgba(20, 60, 40, 0.95);
+  border: 1px solid #4c8;
+  color: #afa;
+}
+
+.config-toast-error {
+  background: rgba(60, 20, 20, 0.95);
+  border: 1px solid #f55;
+  color: #faa;
 }
