@@ -45,11 +45,14 @@ void setup()
 	display_home_page();
 	load_spiffs();
 	print_json_data();
+	emit_webcfg_ready_once();
 
 	Serial.println("Select mode: left=AP, right=STA");
 
 	for (;;)
 	{
+		poll_serial_config();
+
 		if (current_mode & AP_MASK)
 		{
 			setup_ap();

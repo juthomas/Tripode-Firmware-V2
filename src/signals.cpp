@@ -1,6 +1,19 @@
 #include "tripodes.h"
 
+static const char *WEBCFG_PREFIX = "WEBCFG:";
+static const char *WEBCFG_READY = "WEBCFG:READY";
+
 static String serial_line;
+static bool webcfg_ready_sent = false;
+
+void emit_webcfg_ready_once()
+{
+	if (!webcfg_ready_sent)
+	{
+		Serial.println(WEBCFG_READY);
+		webcfg_ready_sent = true;
+	}
+}
 
 void execute_signals(t_sensors *sensors)
 {
@@ -28,8 +41,11 @@ void poll_serial_config()
 		{
 			if (serial_line.length() > 0)
 			{
-				Serial.printf("[Serial config] %s\n", serial_line.c_str());
-				parse_json_from_client((uint8_t *)serial_line.c_str());
+				const char *payload = serial_line.c_str();
+				if (strncmp(payload, WEBCFG_PREFIX, strlen(WEBCFG_PREFIX)) == 0)
+					payload += strlen(WEBCFG_PREFIX);
+				Serial.printf("[Serial config] %s\n", payload);
+				parse_json_from_client((uint8_t *)payload);
 				update_spiffs();
 				dump_json_to_serial();
 				serial_line = "";

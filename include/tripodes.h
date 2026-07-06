@@ -46,6 +46,7 @@ enum e_wifi_modes
 	STA_MASK = 0b00010,
 	STD_MODE = 0b00100,
 	SENSORS_MODE = 0b01000,
+	WIFI_QR_MODE = 0b01100,
 	AP_MODE = 0b10000,
 	RUNE_MODE = 0b10100,
 	MIDI_MODE = 0b11000,
@@ -161,6 +162,7 @@ std::string serialize_json_data(bool include_meta = false, bool meta_saved = tru
 bool update_spiffs();
 void parse_json_from_client(uint8_t *data);
 void poll_serial_config();
+void emit_webcfg_ready_once();
 
 /* Network */
 void setup_ap();
@@ -221,6 +223,7 @@ void drawMotorsActivity(TFT_eSPI tft, int32_t pwmValues[3], int32_t localUdpPort
 void drawSensorsActivity(TFT_eSPI tft, t_sensors sensors, int32_t oscAddress, bool is_upd_sending, bool is_osc_sending);
 void drawRunes(TFT_eSPI tft, float alpha, bool is_upd_sending, bool is_osc_sending);
 void drawNetworkActivity(bool is_udp_sending, bool is_osc_sending);
+void drawWifiQrScreen(bool is_udp_sending, bool is_osc_sending);
 
 #ifdef SET_GLOBAL_VAR
 uint8_t current_mode = NONE_MODE;
