@@ -24,22 +24,6 @@ static char convertBase35ToChar(int nb)
 	return (char)('a' + nb - 10);
 }
 
-IPAddress get_udp_target_ip()
-{
-	return IPAddress(get_octet(json_data.udp_target_ip.c_str(), 1),
-					 get_octet(json_data.udp_target_ip.c_str(), 2),
-					 get_octet(json_data.udp_target_ip.c_str(), 3),
-					 get_octet(json_data.udp_target_ip.c_str(), 4));
-}
-
-IPAddress get_osc_target_ip()
-{
-	return IPAddress(get_octet(json_data.osc_target_ip.c_str(), 1),
-					 get_octet(json_data.osc_target_ip.c_str(), 2),
-					 get_octet(json_data.osc_target_ip.c_str(), 3),
-					 get_octet(json_data.osc_target_ip.c_str(), 4));
-}
-
 void sendUpdMessage(const char *buffer, const IPAddress ipOut, const uint32_t portOut)
 {
 	Udp.beginPacket(ipOut, portOut);

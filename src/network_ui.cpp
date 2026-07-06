@@ -28,6 +28,11 @@ void drawNetworkActivity(bool is_udp_sending, bool is_osc_sending)
 	drawing_sprite.setTextColor(TFT_WHITE);
 	drawing_sprite.printf("%d\n", WiFi.softAPgetStationNum());
 
+	drawing_sprite.setTextColor(TFT_RED);
+	drawing_sprite.printf("Portal : ");
+	drawing_sprite.setTextColor(TFT_WHITE);
+	drawing_sprite.printf("http://4.3.2.1/config\n");
+
 	drawBatteryLevel(&drawing_sprite, 100, 0, battery_voltage);
 	drawUpdSendingActivity(&drawing_sprite, is_udp_sending, is_osc_sending);
 	drawing_sprite.pushSprite(0, 0);

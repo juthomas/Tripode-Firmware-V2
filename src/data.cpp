@@ -1,16 +1,4 @@
 #include "tripodes.h"
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-
-// #region agent log
-static void dbg_log(const char *hypothesisId, const char *location, const char *message)
-{
-	uint32_t stackFree = uxTaskGetStackHighWaterMark(NULL);
-	Serial.printf(
-		"{\"sessionId\":\"f5ef7f\",\"hypothesisId\":\"%s\",\"location\":\"%s\",\"message\":\"%s\",\"data\":{\"stackFreeWords\":%u,\"stackFreeBytes\":%u},\"timestamp\":%lu}\n",
-		hypothesisId, location, message, stackFree, stackFree * sizeof(StackType_t), millis());
-}
-// #endregion
 
 void write_default_config()
 {
@@ -37,15 +25,8 @@ void write_default_config()
 
 void dump_json_to_serial()
 {
-	// #region agent log
-	dbg_log("H1", "data.cpp:dump_json_to_serial:entry", "before serialize_json_data");
-	// #endregion
 	Serial.println("[SPIFFS] Current configuration:");
-	std::string serialized = serialize_json_data();
-	// #region agent log
-	dbg_log("H2", "data.cpp:dump_json_to_serial:post-serialize", "after serialize_json_data");
-	// #endregion
-	Serial.println(serialized.c_str());
+	Serial.println(serialize_json_data().c_str());
 }
 
 void print_json_data()
@@ -115,9 +96,6 @@ static void apply_json_settings(JsonObject settings)
 
 void load_spiffs()
 {
-	// #region agent log
-	dbg_log("H1", "data.cpp:load_spiffs:entry", "load_spiffs start");
-	// #endregion
 	const char *filePath = "/data.json";
 	fs::File file = SPIFFS.open(filePath, "r");
 	if (!file)
@@ -138,13 +116,7 @@ void load_spiffs()
 	Serial.printf("[SPIFFS]\n%s\n", buff);
 
 	{
-		// #region agent log
-		dbg_log("H1", "data.cpp:load_spiffs:pre-doc", "before StaticJsonDocument alloc");
-		// #endregion
 		StaticJsonDocument<JSON_SIZE> doc;
-		// #region agent log
-		dbg_log("H1", "data.cpp:load_spiffs:post-doc", "after StaticJsonDocument alloc");
-		// #endregion
 		DeserializationError error = deserializeJson(doc, buff);
 		if (error)
 		{
@@ -171,20 +143,13 @@ void load_spiffs()
 	}
 
 	free(buff);
-	// #region agent log
-	dbg_log("H1", "data.cpp:load_spiffs:pre-dump", "doc freed from stack, calling dump_json_to_serial");
-	// #endregion
 	dump_json_to_serial();
-	// #region agent log
-	dbg_log("H1", "data.cpp:load_spiffs:post-dump", "dump_json_to_serial returned");
-	// #endregion
+	invalidate_target_cache();
+	refresh_target_cache();
 }
 
 std::string serialize_json_data()
 {
-	// #region agent log
-	dbg_log("H2", "data.cpp:serialize_json_data:entry", "using static JsonDocument");
-	// #endregion
 	static StaticJsonDocument<JSON_SIZE> doc;
 	doc.clear();
 
@@ -212,13 +177,7 @@ std::string serialize_json_data()
 	}
 
 	std::string buff;
-	// #region agent log
-	dbg_log("H2", "data.cpp:serialize_json_data:pre-pretty", "before serializeJsonPretty");
-	// #endregion
 	serializeJsonPretty(doc, buff);
-	// #region agent log
-	dbg_log("H2", "data.cpp:serialize_json_data:post-pretty", "after serializeJsonPretty");
-	// #endregion
 	return buff;
 }
 

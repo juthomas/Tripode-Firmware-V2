@@ -97,6 +97,8 @@ void parse_json_from_client(uint8_t *data)
 		}
 	}
 	print_json_data();
+	invalidate_target_cache();
+	refresh_target_cache();
 }
 
 static void send_json_to_client(AsyncWebSocketClient *client)

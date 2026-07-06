@@ -1,4 +1,5 @@
 #include "tripodes.h"
+#include <ESPmDNS.h>
 #include <esp_wifi.h>
 
 #define MAX_CLIENTS 10
@@ -9,35 +10,63 @@ const IPAddress captiveGatewayIP(4, 3, 2, 1);
 const IPAddress captiveSubnetMask(255, 255, 255, 0);
 const String localIPURL = "http://4.3.2.1";
 
+static bool portalDismissed = false;
+
+static const char *CAPTIVE_SUCCESS_HTML =
+	"<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>";
+
+static void sendCaptiveProbeResponse(AsyncWebServerRequest *request)
+{
+	if (portalDismissed)
+		request->send(200, "text/html", CAPTIVE_SUCCESS_HTML);
+	else
+		request->redirect(localIPURL);
+}
+
 void register_web_routes()
 {
 	server.on("/", HTTP_ANY, [](AsyncWebServerRequest *request) {
 		request->send(SPIFFS, "/index.html", String(), false);
 	});
 
+	server.on("/config/doc", HTTP_GET, [](AsyncWebServerRequest *request) {
+		request->send(SPIFFS, "/index.html", "text/html", false);
+	});
+
+	server.on("/config", HTTP_GET, [](AsyncWebServerRequest *request) {
+		request->send(SPIFFS, "/index.html", "text/html", false);
+	});
+
 	server.on("/connecttest.txt", [](AsyncWebServerRequest *request) {
-		request->redirect("http://logout.net");
+		if (portalDismissed)
+			request->send(200, "text/html", CAPTIVE_SUCCESS_HTML);
+		else
+			request->redirect("http://logout.net");
 	});
 	server.on("/wpad.dat", [](AsyncWebServerRequest *request) {
 		request->send(404);
 	});
 	server.on("/generate_204", [](AsyncWebServerRequest *request) {
-		request->redirect(localIPURL);
+		if (portalDismissed)
+			request->send(204);
+		else
+			request->redirect(localIPURL);
 	});
 	server.on("/redirect", [](AsyncWebServerRequest *request) {
-		request->redirect(localIPURL);
+		sendCaptiveProbeResponse(request);
 	});
 	server.on("/hotspot-detect.html", [](AsyncWebServerRequest *request) {
-		request->redirect(localIPURL);
+		sendCaptiveProbeResponse(request);
 	});
 	server.on("/canonical.html", [](AsyncWebServerRequest *request) {
-		request->redirect(localIPURL);
+		sendCaptiveProbeResponse(request);
 	});
 	server.on("/success.txt", [](AsyncWebServerRequest *request) {
-		request->send(200);
+		portalDismissed = true;
+		request->send(200, "text/html", CAPTIVE_SUCCESS_HTML);
 	});
 	server.on("/ncsi.txt", [](AsyncWebServerRequest *request) {
-		request->redirect(localIPURL);
+		sendCaptiveProbeResponse(request);
 	});
 
 	server.serveStatic("/index.css", SPIFFS, "/index.css");
@@ -53,7 +82,12 @@ void register_web_routes()
 	server.addHandler(&ws);
 	server.onNotFound([](AsyncWebServerRequest *request) {
 		if (is_ap_mode)
-			request->redirect(localIPURL);
+		{
+			if (portalDismissed)
+				request->send(200, "text/html", CAPTIVE_SUCCESS_HTML);
+			else
+				request->redirect(localIPURL);
+		}
 		else
 			request->send(404);
 	});
@@ -81,6 +115,7 @@ void setup_ap()
 	Serial.println(WiFi.softAPIP());
 	Udp.begin(json_data.udp_input_port);
 	init_motors();
+	portalDismissed = false;
 	register_web_routes();
 	server.begin();
 }
@@ -107,6 +142,8 @@ void setup_sta()
 
 	Serial.print("Connected, IP address: ");
 	Serial.println(WiFi.localIP());
+	MDNS.begin("tripode");
+	refresh_target_cache();
 	Udp.begin(json_data.udp_input_port);
 	register_web_routes();
 	server.begin();
