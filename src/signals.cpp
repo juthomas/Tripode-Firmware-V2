@@ -22,6 +22,9 @@ void execute_signals(t_sensors *sensors)
 
 	for (const auto &signal : signal_data)
 	{
+		if (!signal.enabled)
+			continue;
+
 		if (signal.type == "udp" && udp_sending)
 		{
 			std::string payload = expand_signal_placeholders(signal.value, sensors);

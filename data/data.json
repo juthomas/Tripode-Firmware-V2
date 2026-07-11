@@ -1,12 +1,12 @@
 {
     "settings": {
-        "upd_target_ip": "192.168.4.2",
+        "upd_target_ip": "norns.local",
         "upd_target_port": 49160,
         "upd_input_port": 49141,
-        "osc_target_ip": "192.168.4.2",
-        "osc_target_port": 2002,
-        "sta_ssid": "tripodesAP",
-        "sta_pswd": "44448888",
+        "osc_target_ip": "norns.local",
+        "osc_target_port": 10111,
+        "sta_ssid": "TP-Link_050E",
+        "sta_pswd": "59275626",
         "ap_ssid": "tripodesAP",
         "ap_pswd": "44448888",
         "tripode_id": "1_1",
@@ -15,36 +15,58 @@
         "glyph_pos_x": 48,
         "glyph_pos_y": 6,
         "gyro_norm_min": 0,
-        "gyro_norm_max": 35,
+        "gyro_norm_max": 100,
         "accel_norm_min": 0,
-        "accel_norm_max": 35,
+        "accel_norm_max": 100,
         "mag_norm_min": 0,
-        "mag_norm_max": 35
+        "mag_norm_max": 100,
+        "signal_poll_ms": 100
     },
     "signals": [
         {
-            "value": "write:;#0D300I255P1;12;12",
-            "type": "udp"
+            "value": "/gyro_x:{G:X}",
+            "type": "osc",
+            "enabled": true
         },
         {
-            "value": "select:0;0",
-            "type": "udp"
+            "value": "/gyro_y:{G:Y}",
+            "type": "osc",
+            "enabled": true
         },
         {
-            "value": "write:1V{G:X}2V{G:Y}3V{G:Z};0;0",
-            "type": "udp"
+            "value": "/gyro_z:{G:Z}",
+            "type": "osc",
+            "enabled": true
         },
         {
-            "value": "/gyroscope_x:{G:X}",
-            "type": "osc"
+            "value": "/acc_x:{A:X}",
+            "type": "osc",
+            "enabled": true
         },
         {
-            "value": "/gyroscope_y:{G:Y}",
-            "type": "osc"
+            "value": "/acc_y:{A:Y}",
+            "type": "osc",
+            "enabled": true
         },
         {
-            "value": "/gyroscope_z:{G:Z}",
-            "type": "osc"
+            "value": "/acc_z:{A:Z}",
+            "type": "osc",
+            "enabled": true
+        },
+        {
+            "value": "/mag_x:{M:X}",
+            "type": "osc",
+            "enabled": true
+        },
+        {
+            "value": "/mag_y:{M:Y}",
+            "type": "osc",
+            "enabled": true
+        },
+        {
+            "value": "/mag_z:{M:Z}",
+            "type": "osc",
+            "enabled": true
         }
     ]
 }

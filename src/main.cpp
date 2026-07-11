@@ -70,9 +70,12 @@ void setup()
 void loop()
 {
 	t_sensors sensors = {};
+	static uint32_t last_signal_poll_ms = 0;
 
 	if (is_ap_mode)
 		dnsServer.processNextRequest();
+
+	ws.cleanupClients(2);
 
 	poll_serial_config();
 
@@ -86,7 +89,13 @@ void loop()
 	if (!i2s_on)
 		update_sensors(&sensors);
 
-	execute_signals(&sensors);
+	uint32_t now = millis();
+	if (now - last_signal_poll_ms >= get_signal_poll_interval_ms())
+	{
+		execute_signals(&sensors);
+		last_signal_poll_ms = now;
+	}
+
 	draw_current_mode_screen(&sensors);
 
 	delay(25);

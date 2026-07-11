@@ -66,6 +66,9 @@
   font-weight: 600;
   cursor: pointer;
   box-sizing: border-box;
+  display: block;
+  text-align: center;
+  text-decoration: none;
 }
 
 .portal-btn:hover {
@@ -79,4 +82,26 @@
 
 .portal-btn-primary:hover {
   background: #ff6666;
+}
+
+.portal-btn-done {
+  background: #44ff88;
+  border-color: #44ff88;
+  color: #000;
+}
+
+.portal-btn-done:hover {
+  background: #66ffaa;
+}
+
+.portal-hint {
+  margin: 16px 0 0;
+  font-size: 0.75rem;
+  color: #888;
+  line-height: 1.45;
+}
+
+.portal-hint strong {
+  color: #ccc;
+  font-weight: 600;
 }

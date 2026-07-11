@@ -6,6 +6,7 @@ import "./config.css";
 interface Signal {
   value: string;
   type: "udp" | "osc";
+  enabled?: boolean;
 }
 
 interface Settings {
@@ -29,6 +30,7 @@ interface Settings {
   accel_norm_max?: number;
   mag_norm_min?: number;
   mag_norm_max?: number;
+  signal_poll_ms?: number;
 }
 
 interface DataInterface {
@@ -67,8 +69,9 @@ const defaultData: DataInterface = {
     accel_norm_max: 35,
     mag_norm_min: 0,
     mag_norm_max: 35,
+    signal_poll_ms: 25,
   },
-  signals: [{ value: "write:;#0D300I255P1;12;12", type: "udp" }],
+  signals: [{ value: "write:;#0D300I255P1;12;12", type: "udp", enabled: true }],
 };
 
 const fieldLabels: Record<keyof Settings, string> = {
@@ -92,6 +95,7 @@ const fieldLabels: Record<keyof Settings, string> = {
   accel_norm_max: "Accel norm max",
   mag_norm_min: "Magneto norm min",
   mag_norm_max: "Magneto norm max",
+  signal_poll_ms: "Intervalle envoi signaux (ms)",
 };
 
 const fieldPlaceholders: Partial<Record<keyof Settings, string>> = {
@@ -112,6 +116,7 @@ const settingSections: { title: string; keys: (keyof Settings)[] }[] = [
       "upd_target_ip",
       "upd_target_port",
       "upd_input_port",
+      "signal_poll_ms",
     ],
   },
   {
@@ -149,10 +154,17 @@ function valuesMatch(
   return String(a) === String(b);
 }
 
+function isSignalEnabled(sig: Signal): boolean {
+  return sig.enabled !== false;
+}
+
 function signalsMatch(a: Signal[], b: Signal[]): boolean {
   if (a.length !== b.length) return false;
   return a.every(
-    (sig, i) => sig.value === b[i].value && sig.type === b[i].type
+    (sig, i) =>
+      sig.value === b[i].value &&
+      sig.type === b[i].type &&
+      isSignalEnabled(sig) === isSignalEnabled(b[i])
   );
 }
 
@@ -223,6 +235,8 @@ function SettingRow({
 
 export const ConfigApp = (): JSX.Element => {
   const socketRef = useRef<WebSocket | null>(null);
+  const reconnectDelayRef = useRef(3000);
+  const reconnectTimerRef = useRef<number | null>(null);
   const pendingSettingsRef = useRef<
     Record<string, { value: string | number; timeoutId: number }>
   >({});
@@ -310,7 +324,15 @@ export const ConfigApp = (): JSX.Element => {
   );
 
   const connectWs = useCallback(() => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) return;
+    const existing = socketRef.current;
+    if (existing?.readyState === WebSocket.OPEN) return;
+    if (existing?.readyState === WebSocket.CONNECTING) return;
+
+    if (existing) {
+      existing.onclose = null;
+      existing.close();
+      socketRef.current = null;
+    }
 
     setWsStatus("connecting");
     const host = window.location.hostname || "4.3.2.1";
@@ -318,6 +340,7 @@ export const ConfigApp = (): JSX.Element => {
     socketRef.current = newSocket;
 
     newSocket.addEventListener("open", () => {
+      reconnectDelayRef.current = 3000;
       setWsStatus("open");
     });
 
@@ -336,14 +359,42 @@ export const ConfigApp = (): JSX.Element => {
 
     newSocket.addEventListener("close", () => {
       setWsStatus("closed");
-      socketRef.current = null;
-      window.setTimeout(() => connectWs(), 3000);
+      if (socketRef.current === newSocket) socketRef.current = null;
+
+      if (reconnectTimerRef.current) return;
+      if (document.visibilityState === "hidden") return;
+
+      const delay = reconnectDelayRef.current;
+      reconnectTimerRef.current = window.setTimeout(() => {
+        reconnectTimerRef.current = null;
+        connectWs();
+        reconnectDelayRef.current = Math.min(reconnectDelayRef.current * 2, 12000);
+      }, delay);
     });
   }, [handleWsMessage]);
 
   useEffect(() => {
     connectWs();
+
+    const onVisible = () => {
+      if (
+        document.visibilityState === "visible" &&
+        socketRef.current?.readyState !== WebSocket.OPEN &&
+        socketRef.current?.readyState !== WebSocket.CONNECTING &&
+        !reconnectTimerRef.current
+      ) {
+        reconnectDelayRef.current = 3000;
+        connectWs();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
     return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      if (reconnectTimerRef.current) {
+        window.clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
       socketRef.current?.close();
       socketRef.current = null;
       Object.values(pendingSettingsRef.current).forEach((p) =>
@@ -410,7 +461,7 @@ export const ConfigApp = (): JSX.Element => {
   };
 
   const addCommand = () => {
-    setCommands([...commands, { value: "", type: "udp" }]);
+    setCommands([...commands, { value: "", type: "udp", enabled: true }]);
   };
 
   const removeCommand = (index: number) => {
@@ -498,7 +549,29 @@ export const ConfigApp = (): JSX.Element => {
             </p>
             <div className="signals-panel">
               {commands.map((cmd, index) => (
-                <div key={index} className="signal-row">
+                <div
+                  key={index}
+                  className={
+                    isSignalEnabled(cmd)
+                      ? "signal-row"
+                      : "signal-row signal-row-disabled"
+                  }
+                >
+                  <input
+                    type="checkbox"
+                    className="signal-enable-checkbox"
+                    checked={isSignalEnabled(cmd)}
+                    onChange={(e) => {
+                      const next = [...commands];
+                      next[index] = {
+                        ...next[index],
+                        enabled: e.target.checked,
+                      };
+                      setCommands(next);
+                    }}
+                    aria-label="Activer ce signal"
+                    title="Activer / désactiver"
+                  />
                   <input
                     value={cmd.value}
                     placeholder="write:1V{G:Y};0;0 ou TEST{G:Y:DEC}, {A}, {M:HEX:Z}"

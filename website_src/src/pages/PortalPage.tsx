@@ -24,7 +24,7 @@ export const PortalPage = (): JSX.Element => {
   };
 
   const finishPortal = () => {
-    window.location.href = "/success.txt";
+    window.location.href = "/portal/done";
   };
 
   return (
@@ -38,17 +38,29 @@ export const PortalPage = (): JSX.Element => {
         <code className="portal-url">{configUrl}</code>
 
         <div className="portal-actions">
+          <a className="portal-btn portal-btn-primary" href="/config">
+            Ouvrir la configuration
+          </a>
           <button
             type="button"
-            className="portal-btn portal-btn-primary"
+            className="portal-btn portal-btn-done"
+            onClick={finishPortal}
+          >
+            Terminé
+          </button>
+          <button
+            type="button"
+            className="portal-btn"
             onClick={copyConfigUrl}
           >
             {copied ? "Copié" : "Copier l'adresse"}
           </button>
-          <button type="button" className="portal-btn" onClick={finishPortal}>
-            Terminé
-          </button>
         </div>
+
+        <p className="portal-hint">
+          Appuyez sur <strong>Terminé</strong> pour fermer le portail captif et
+          retrouver votre connexion internet.
+        </p>
       </div>
     </div>
   );

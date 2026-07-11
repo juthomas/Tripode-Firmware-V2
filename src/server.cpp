@@ -1,4 +1,5 @@
 #include "tripodes.h"
+#include <vector>
 
 void parse_json_from_client(uint8_t *data)
 {
@@ -15,9 +16,12 @@ void parse_json_from_client(uint8_t *data)
 		signal_data.clear();
 		for (uint16_t i = 0; i < doc["signals"].size(); i++)
 		{
+			JsonObject sig = doc["signals"][i];
+			bool enabled = !sig.containsKey("enabled") || sig["enabled"].as<bool>();
 			signal_data.push_back({
-				.value = patch::to_string(doc["signals"][i]["value"].as<const char *>()),
-				.type = patch::to_string(doc["signals"][i]["type"].as<const char *>())});
+				.value = patch::to_string(sig["value"].as<const char *>()),
+				.type = patch::to_string(sig["type"].as<const char *>()),
+				.enabled = enabled});
 		}
 	}
 
@@ -109,6 +113,7 @@ void parse_json_from_client(uint8_t *data)
 		}
 	}
 	print_json_data();
+	json_data.signal_poll_ms = get_signal_poll_interval_ms();
 	invalidate_target_cache();
 	refresh_target_cache();
 	invalidate_wifi_qr_screen();
@@ -117,7 +122,8 @@ void parse_json_from_client(uint8_t *data)
 static void send_json_to_client(AsyncWebSocketClient *client)
 {
 	bool saved = update_spiffs();
-	client->text(serialize_json_data(true, saved).c_str());
+	std::string payload = serialize_json_data(true, saved, true);
+	client->text(payload.c_str());
 }
 
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
@@ -126,7 +132,6 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
 	{
 		Serial.printf("ws[%s][%u] connect\n", server->url(), client->id());
 		send_json_to_client(client);
-		client->ping();
 	}
 	else if (type == WS_EVT_DISCONNECT)
 	{
@@ -141,8 +146,10 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
 		AwsFrameInfo *info = (AwsFrameInfo *)arg;
 		if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT)
 		{
-			data[len] = 0;
-			parse_json_from_client(data);
+			std::vector<uint8_t> msg(len + 1);
+			memcpy(msg.data(), data, len);
+			msg[len] = 0;
+			parse_json_from_client(msg.data());
 			send_json_to_client(client);
 		}
 	}

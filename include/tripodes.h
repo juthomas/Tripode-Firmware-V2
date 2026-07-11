@@ -57,6 +57,7 @@ typedef struct s_signal_data
 {
 	std::string value;
 	std::string type;
+	bool enabled;
 } t_signal_data;
 
 typedef struct s_json_data
@@ -81,6 +82,7 @@ typedef struct s_json_data
 	int32_t accel_norm_max;
 	int32_t mag_norm_min;
 	int32_t mag_norm_max;
+	uint32_t signal_poll_ms;
 } t_json_data;
 
 enum e_json_data_types
@@ -117,7 +119,8 @@ static const std::string json_data_parser_patch[] = {
 	"osc_target_ip", "osc_target_port",
 	"sta_ssid", "sta_pswd", "ap_ssid", "ap_pswd", "tripode_id",
 	"fractal_state_pos_x", "fractal_state_pos_y", "glyph_pos_x", "glyph_pos_y",
-	"gyro_norm_min", "gyro_norm_max", "accel_norm_min", "accel_norm_max", "mag_norm_min", "mag_norm_max"};
+	"gyro_norm_min", "gyro_norm_max", "accel_norm_min", "accel_norm_max", "mag_norm_min", "mag_norm_max",
+	"signal_poll_ms"};
 
 static const t_json_data_parser json_data_parser[] = {
 	{.offset = offsetof(t_json_data, udp_target_ip), .name = "upd_target_ip", .type = TYPE_STRING},
@@ -139,7 +142,8 @@ static const t_json_data_parser json_data_parser[] = {
 	{.offset = offsetof(t_json_data, accel_norm_min), .name = "accel_norm_min", .type = TYPE_SIGNED},
 	{.offset = offsetof(t_json_data, accel_norm_max), .name = "accel_norm_max", .type = TYPE_SIGNED},
 	{.offset = offsetof(t_json_data, mag_norm_min), .name = "mag_norm_min", .type = TYPE_SIGNED},
-	{.offset = offsetof(t_json_data, mag_norm_max), .name = "mag_norm_max", .type = TYPE_SIGNED}};
+	{.offset = offsetof(t_json_data, mag_norm_max), .name = "mag_norm_max", .type = TYPE_SIGNED},
+	{.offset = offsetof(t_json_data, signal_poll_ms), .name = "signal_poll_ms", .type = TYPE_INTEGER}};
 
 namespace patch
 {
@@ -158,7 +162,9 @@ void dump_json_to_serial();
 uint8_t get_octet(const char *str, uint8_t n);
 void write_default_config();
 void load_spiffs();
-std::string serialize_json_data(bool include_meta = false, bool meta_saved = true);
+uint32_t get_signal_poll_interval_ms();
+void trim_wifi_credentials();
+std::string serialize_json_data(bool include_meta = false, bool meta_saved = true, bool compact = false);
 bool update_spiffs();
 void parse_json_from_client(uint8_t *data);
 void poll_serial_config();

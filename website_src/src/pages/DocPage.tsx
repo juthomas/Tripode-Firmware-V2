@@ -14,11 +14,17 @@ export const DocPage = (): JSX.Element => {
         <section className="doc-section">
           <h2>Boucle principale</h2>
           <p>
-            À chaque cycle (~25 ms), le firmware lit les capteurs, exécute les
-            signaux configurés, puis met à jour l&apos;écran.
+            Le firmware lit les capteurs et met à jour l&apos;écran à ~25 ms.
+            L&apos;envoi réseau OSC/UDP est contrôlé séparément par{" "}
+            <code>signal_poll_ms</code> (intervalle entre deux exécutions de{" "}
+            <code>signals[]</code>, défaut 25 ms ≈ 40 Hz).
           </p>
           <p>
-            <code>capteurs → signals[] → UDP / OSC → affichage TFT</code>
+            <code>capteurs → (signal_poll_ms) → signals[] → UDP / OSC → affichage TFT</code>
+          </p>
+          <p>
+            Plage autorisée : 5–1000 ms (5 ms ≈ 200 Hz, 1000 ms = 1 Hz). L&apos;écran
+            et les capteurs restent rafraîchis à ~40 Hz indépendamment de ce réglage.
           </p>
         </section>
 
@@ -37,11 +43,17 @@ export const DocPage = (): JSX.Element => {
             <li>
               <code>type</code> — <code>udp</code> ou <code>osc</code>
             </li>
+            <li>
+              <code>enabled</code> — <code>true</code> ou <code>false</code>{" "}
+              (optionnel, <code>true</code> par défaut). Désactivez un signal
+              via la case à cocher de la ligne sans le supprimer.
+            </li>
           </ul>
           <p>
-            L&apos;envoi dépend des flags hardware : bouton gauche = toggle UDP,
-            double-clic gauche = toggle OSC. Un signal n&apos;est émis que si son
-            type est actif.
+            Un signal n&apos;est exécuté que si <code>enabled</code> est actif
+            (ou absent). L&apos;envoi réseau dépend en plus des flags hardware :
+            bouton gauche = toggle UDP, double-clic gauche = toggle OSC. Un signal
+            n&apos;est émis que si son type est actif côté hardware.
           </p>
         </section>
 

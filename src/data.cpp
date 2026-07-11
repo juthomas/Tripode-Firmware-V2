@@ -22,14 +22,15 @@ void write_default_config()
 	json_data.accel_norm_max = 35;
 	json_data.mag_norm_min = 0;
 	json_data.mag_norm_max = 35;
+	json_data.signal_poll_ms = 25;
 
 	signal_data.clear();
-	signal_data.push_back({.value = "write:;#0D300I255P1;12;12", .type = "udp"});
-	signal_data.push_back({.value = "select:0;0", .type = "udp"});
-	signal_data.push_back({.value = "write:1V{G:X}2V{G:Y}3V{G:Z};0;0", .type = "udp"});
-	signal_data.push_back({.value = "/gyroscope_x:{G:X}", .type = "osc"});
-	signal_data.push_back({.value = "/gyroscope_y:{G:Y}", .type = "osc"});
-	signal_data.push_back({.value = "/gyroscope_z:{G:Z}", .type = "osc"});
+	signal_data.push_back({.value = "write:;#0D300I255P1;12;12", .type = "udp", .enabled = true});
+	signal_data.push_back({.value = "select:0;0", .type = "udp", .enabled = true});
+	signal_data.push_back({.value = "write:1V{G:X}2V{G:Y}3V{G:Z};0;0", .type = "udp", .enabled = true});
+	signal_data.push_back({.value = "/gyroscope_x:{G:X}", .type = "osc", .enabled = true});
+	signal_data.push_back({.value = "/gyroscope_y:{G:Y}", .type = "osc", .enabled = true});
+	signal_data.push_back({.value = "/gyroscope_z:{G:Z}", .type = "osc", .enabled = true});
 	update_spiffs();
 	Serial.println("[SPIFFS] Created default /data.json");
 }
@@ -72,6 +73,27 @@ uint8_t get_octet(const char *str, uint8_t n)
 	return last_octet;
 }
 
+static void trim_string(std::string &value)
+{
+	while (!value.empty() && (value.back() == ' ' || value.back() == '\t' || value.back() == '\r' || value.back() == '\n'))
+		value.pop_back();
+
+	size_t start = 0;
+	while (start < value.size() && (value[start] == ' ' || value[start] == '\t'))
+		start += 1;
+
+	if (start > 0)
+		value.erase(0, start);
+}
+
+void trim_wifi_credentials()
+{
+	trim_string(json_data.sta_ssid);
+	trim_string(json_data.sta_pswd);
+	trim_string(json_data.ap_ssid);
+	trim_string(json_data.ap_pswd);
+}
+
 static void apply_json_settings(JsonObject settings)
 {
 	for (uint16_t i = 0; i < sizeof(json_data_parser) / sizeof(t_json_data_parser); i++)
@@ -109,6 +131,20 @@ static void apply_json_settings(JsonObject settings)
 		break;
 		}
 	}
+	trim_wifi_credentials();
+}
+
+uint32_t get_signal_poll_interval_ms()
+{
+	uint32_t ms = json_data.signal_poll_ms;
+	if (ms < 5 || ms > 1000)
+		return 25;
+	return ms;
+}
+
+static void normalize_signal_poll_ms()
+{
+	json_data.signal_poll_ms = get_signal_poll_interval_ms();
 }
 
 void load_spiffs()
@@ -152,9 +188,12 @@ void load_spiffs()
 		{
 			for (uint16_t i = 0; i < doc["signals"].size(); i++)
 			{
+				JsonObject sig = doc["signals"][i];
+				bool enabled = !sig.containsKey("enabled") || sig["enabled"].as<bool>();
 				signal_data.push_back({
-					.value = patch::to_string(doc["signals"][i]["value"].as<const char *>()),
-					.type = patch::to_string(doc["signals"][i]["type"].as<const char *>())});
+					.value = patch::to_string(sig["value"].as<const char *>()),
+					.type = patch::to_string(sig["type"].as<const char *>()),
+					.enabled = enabled});
 			}
 		}
 	}
@@ -168,13 +207,15 @@ void load_spiffs()
 		json_data.mag_norm_max = 35;
 	}
 
+	normalize_signal_poll_ms();
+
 	free(buff);
 	dump_json_to_serial();
 	invalidate_target_cache();
 	refresh_target_cache();
 }
 
-std::string serialize_json_data(bool include_meta, bool meta_saved)
+std::string serialize_json_data(bool include_meta, bool meta_saved, bool compact)
 {
 	static StaticJsonDocument<JSON_SIZE> doc;
 	doc.clear();
@@ -203,13 +244,17 @@ std::string serialize_json_data(bool include_meta, bool meta_saved)
 	{
 		doc["signals"][i]["value"] = signal_data[i].value.c_str();
 		doc["signals"][i]["type"] = signal_data[i].type.c_str();
+		doc["signals"][i]["enabled"] = signal_data[i].enabled;
 	}
 
 	if (include_meta)
 		doc["meta"]["saved"] = meta_saved;
 
 	std::string buff;
-	serializeJsonPretty(doc, buff);
+	if (compact)
+		serializeJson(doc, buff);
+	else
+		serializeJsonPretty(doc, buff);
 	return buff;
 }
 

@@ -115,9 +115,22 @@
 
 .signal-row {
   display: grid;
-  grid-template-columns: 1fr 72px 36px;
+  grid-template-columns: 28px 1fr 72px 36px;
   gap: 8px;
   align-items: center;
+}
+
+.signal-enable-checkbox {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+  justify-self: center;
+}
+
+.signal-row-disabled input:not([type="checkbox"]),
+.signal-row-disabled select {
+  opacity: 0.45;
 }
 
 .signal-row input,
